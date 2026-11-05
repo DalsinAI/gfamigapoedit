@@ -6,7 +6,8 @@
 set -eu
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 STOVE=${STOVE:-"$HOME/AmiCradle/stoves/os32-gcc16-open6"}
-OUT="${OUT:-$HERE/build/out}"; WORK="${WORK:-$HERE/build}"
+# work tree outside the checkout: Cradle cleans the checkout before every job
+WORK="${WORK:-$HOME/.cache/gfamigapoedit/build}"; OUT="${OUT:-$WORK/out}"
 TC="$STOVE/prefix"
 . "$HERE/poedit.lock"
 mkdir -p "$WORK/deps" "$OUT"

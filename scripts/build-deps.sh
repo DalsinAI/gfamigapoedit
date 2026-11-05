@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds what Poedit needs besides wx into one sysroot: Boost's compiled
-# parts (thread on pthreads, filesystem, chrono, date_time, atomic,
+# parts (thread on pthreads, filesystem, chrono, date_time,
 # iostreams without mmap/bzip2/lzma/zstd) and its headers.
 #   TOOLCHAIN=.../prefix WORK=build scripts/build-deps.sh
 # Copyright (c) 2026 AmiCradle Team
@@ -11,7 +11,7 @@ WORK=${WORK:-$HOME/.cache/gfamigapoedit/build}; JOBS=${JOBS:-12}
 PATH="$TOOLCHAIN/bin:$PATH"
 SYS="$WORK/sysroot"; D="$WORK/dl"
 mkdir -p "$SYS/include" "$SYS/lib" "$D"
-CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks"
+CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
 PD="$TOOLCHAIN/m68k-amigaos/port-deps"
 
 fetch() { # url sha file
@@ -35,6 +35,14 @@ if ! stamp boost "$BOOST_SHA256"; then
     B="$WORK/boost-$BOOST_VERSION"; rm -rf "$B"
     tar -C "$WORK" -xJf "$D/boost.tar.xz"
     rm -rf "$SYS/include/boost"; cp -R "$B/boost" "$SYS/include/boost"
+    cp "$HERE/scripts/boost/amigaos.hpp" "$SYS/include/boost/config/platform/amigaos.hpp"
+    # the stove's pthreads have no pthread_condattr_setclock: condition
+    # variables wait on the real-time clock, as Boost does where there is no
+    # CLOCK_MONOTONIC
+    sed -i 's/^  #if defined(CLOCK_MONOTONIC)$/  #if defined(CLOCK_MONOTONIC) \&\& !defined(__amigaos__)/' \
+        "$SYS/include/boost/thread/detail/config.hpp"
+    grep -q 'CLOCK_MONOTONIC) && !defined(__amigaos__)' "$SYS/include/boost/thread/detail/config.hpp" \
+        || { echo "boost thread config: clock line not found"; exit 1; }
     O="$WORK/obj/boost"; rm -rf "$O"; mkdir -p "$O"
     DEF="-DBOOST_ALL_NO_LIB -DBOOST_THREAD_POSIX -DBOOST_THREAD_BUILD_LIB -DBOOST_THREAD_VERSION=4 \
          -DBOOST_FILESYSTEM_STATIC_LINK -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF -DBOOST_IOSTREAMS_NO_LIB"
@@ -44,7 +52,7 @@ if ! stamp boost "$BOOST_SHA256"; then
              filesystem/src/operations.cpp filesystem/src/path.cpp filesystem/src/path_traits.cpp \
              filesystem/src/portability.cpp filesystem/src/unique_path.cpp filesystem/src/utf8_codecvt_facet.cpp \
              chrono/src/chrono.cpp chrono/src/thread_clock.cpp chrono/src/process_cpu_clocks.cpp \
-             date_time/src/gregorian/greg_month.cpp atomic/src/lock_pool.cpp \
+             date_time/src/gregorian/greg_month.cpp \
              iostreams/src/file_descriptor.cpp iostreams/src/zlib.cpp iostreams/src/gzip.cpp; do
         set -- "$@" "$f"
     done

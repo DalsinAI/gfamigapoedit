@@ -1,0 +1,16 @@
+# What this port builds on: fetched at build time, never shipped.
+POEDIT_GIT=https://github.com/vslavik/poedit.git
+POEDIT_TAG=v3.10-oss
+POEDIT_COMMIT=2ed0c77cb5bc57f622f5f9d07faec5d0882a1226
+# Poedit's own pins of the libraries it builds with (its deps/ submodules)
+BOOST_GIT=https://github.com/poedit/boost-subset.git
+BOOST_COMMIT=3a682b6ac028d0892c778c6191a1da023099a346
+LUCENE_GIT=https://github.com/poedit/LucenePlusPlus.git
+LUCENE_COMMIT=308cfb23e15544c627db2d68978d64457f9070aa
+JSON_GIT=https://github.com/nlohmann/json.git
+JSON_COMMIT=55f93686c01528224f448c19128836e7df245f72
+PUGIXML_GIT=https://github.com/zeux/pugixml.git
+PUGIXML_COMMIT=ee86beb30e4973f5feffe3ce63bfa4fbadf72f38
+# Our own pieces, fetched at these commits
+WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
+WXT_COMMIT=e75e16f8278a2c93a23d4ba0fbf2b098c59c0ec4

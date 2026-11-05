@@ -11,7 +11,7 @@ WORK=${WORK:-$HOME/.cache/gfamigapoedit/build}; JOBS=${JOBS:-12}
 PATH="$TOOLCHAIN/bin:$PATH"
 SYS="$WORK/sysroot"; D="$WORK/dl"
 mkdir -p "$SYS/include" "$SYS/lib" "$D"
-CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
+CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE -include $HERE/scripts/amiga-nocancel.h"
 PD="$TOOLCHAIN/m68k-amigaos/port-deps"
 
 fetch() { # url sha file
@@ -42,6 +42,7 @@ if ! stamp boost "$BOOST_SHA256"; then
     tar -C "$WORK" -xJf "$D/boost.tar.xz"
     rm -rf "$SYS/include/boost"; cp -R "$B/boost" "$SYS/include/boost"
     cp "$HERE/scripts/boost/amigaos.hpp" "$SYS/include/boost/config/platform/amigaos.hpp"
+    cp "$HERE/scripts/amiga-nocancel.h" "$SYS/include/amiga-nocancel.h"
     # the stove's pthreads have no pthread_condattr_setclock: condition
     # variables wait on the real-time clock, as Boost does where there is no
     # CLOCK_MONOTONIC

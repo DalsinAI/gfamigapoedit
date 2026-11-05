@@ -11,41 +11,5 @@
 #endif
 #define BOOST_HAS_GETTIMEOFDAY
 
-// The stove's pthread.h makes the POSIX cancellation points macros
-// ("#define read(...) (pthread_testcancel(), read(__VA_ARGS__))"), which
-// break every C++ member and function of those names (iostreams' read and
-// close, chrono's read, the C++ library's messages::close). Take pthread.h
-// in here, once, and drop them; Boost's own thread interruption is not
-// affected.
-#include <unistd.h>
-#include <pthread.h>
-#undef accept
-#undef close
-#undef connect
-#undef creat
-#undef fcntl
-#undef fsync
-#undef lseek
-#undef nanosleep
-#undef open
-#undef pause
-#undef poll
-#undef pread
-#undef pwrite
-#undef read
-#undef readv
-#undef recv
-#undef recvfrom
-#undef recvmsg
-#undef select
-#undef send
-#undef sendmsg
-#undef sendto
-#undef sleep
-#undef system
-#undef tcdrain
-#undef usleep
-#undef wait
-#undef waitpid
-#undef write
-#undef writev
+// pthread.h's cancellation-point macros out (see amiga-nocancel.h)
+#include <amiga-nocancel.h>

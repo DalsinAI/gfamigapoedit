@@ -52,7 +52,7 @@ if ! stamp boost "$BOOST_SHA256"; then
         || { echo "boost thread config: clock line not found"; exit 1; }
     O="$WORK/obj/boost"; rm -rf "$O"; mkdir -p "$O"
     DEF="-DBOOST_ALL_NO_LIB -DBOOST_THREAD_POSIX -DBOOST_THREAD_BUILD_LIB -DBOOST_THREAD_VERSION=4 \
-         -DBOOST_FILESYSTEM_STATIC_LINK -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF -DBOOST_IOSTREAMS_NO_LIB"
+         -DBOOST_FILESYSTEM_STATIC_LINK -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF -DO_DIRECTORY=0 -DBOOST_IOSTREAMS_NO_LIB"
     set --
     for f in thread/src/pthread/thread.cpp thread/src/pthread/once.cpp thread/src/future.cpp \
              filesystem/src/codecvt_error_category.cpp filesystem/src/directory.cpp filesystem/src/exception.cpp \

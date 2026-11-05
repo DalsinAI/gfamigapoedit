@@ -13,6 +13,8 @@ SYS="$WORK/sysroot"; D="$WORK/dl"
 mkdir -p "$SYS/include" "$SYS/lib" "$D"
 CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE -include $HERE/scripts/amiga-nocancel.h"
 PD="$TOOLCHAIN/m68k-amigaos/port-deps"
+CF="-noixemul -m68040 -O2 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
+POE=${POEDIT_SRC:-$WORK/deps/poedit}
 
 fetch() { # url sha file
     if [ ! -f "$D/$3" ] || ! echo "$2  $D/$3" | sha256sum -c - >/dev/null 2>&1; then
@@ -22,6 +24,37 @@ fetch() { # url sha file
     fi
 }
 stamp() { [ "$(cat "$WORK/.stamp-$1" 2>/dev/null)" = "$2" ]; }
+gitpin() { # url commit dir
+    if [ "$(git -C "$3" rev-parse HEAD 2>/dev/null)" != "$2" ]; then
+        rm -rf "$3"; mkdir -p "$3"; git -C "$3" init -q
+        git -C "$3" fetch -q --depth 1 "$1" "$2"; git -C "$3" checkout -q FETCH_HEAD
+        [ "$(git -C "$3" rev-parse HEAD)" = "$2" ] || { echo "commit mismatch: $1"; exit 1; }
+    fi
+}
+# cc_many OBJDIR SRCROOT "FLAGS" FILE...: compiles in parallel; on failure
+# shows the first failing file's errors in full and stops
+cc_many() {
+    od=$1; root=$2; fl=$3; shift 3
+    mkdir -p "$od"
+    for f in "$@"; do
+        o="$od/$(echo "$f" | tr / _ | sed 's/\.c[p]*$/.o/')"
+        [ -f "$o" ] && [ "$o" -nt "$root/$f" ] && continue
+        case "$f" in *.c) c=m68k-amigaos-gcc; std="-std=gnu99"; inc="" ;; *) c=m68k-amigaos-g++; std=""; inc="-include $HERE/scripts/amiga-nocancel.h" ;; esac
+        ( $c $CF $std $inc $fl -c "$root/$f" -o "$o.part" 2> "$o.err" && mv "$o.part" "$o" ) &
+        while [ "$(jobs -p | wc -l)" -ge "$JOBS" ]; do sleep 1; done
+    done
+    wait
+    n=0
+    for f in "$@"; do
+        o="$od/$(echo "$f" | tr / _ | sed 's/\.c[p]*$/.o/')"
+        if [ ! -f "$o" ]; then
+            n=$((n+1))
+            [ "$n" -gt 1 ] || { echo "FAIL $f"; head -40 "$o.err" | sed 's/^ *//; s/^/ERR /'; }
+            echo "FAIL $f"
+        fi
+    done
+    [ "$n" -eq 0 ] || { echo "$n files failed in $od"; exit 1; }
+}
 
 # what the C++ library gives (Boost's config reads these)
 printf "#include <string>\\n#include <atomic>\\n#include <mutex>\\n" | m68k-amigaos-g++ $CXXF -dM -E -x c++ - \
@@ -87,3 +120,34 @@ if ! stamp boost "$BOOST_SHA256"; then
     echo "$BOOST_SHA256" > "$WORK/.stamp-boost"
 fi
 echo "stage boost: $(ls -l "$SYS/lib/libboost_poedit.a" | awk '{print $5}') bytes"
+
+# pugixml and nlohmann json (Poedit's own pins)
+if ! stamp pugixml "$PUGIXML_COMMIT"; then
+    gitpin "$PUGIXML_GIT" "$PUGIXML_COMMIT" "$WORK/pugixml"
+    cc_many "$WORK/obj/pugixml" "$WORK/pugixml" "-std=gnu++17" src/pugixml.cpp
+    cp "$WORK/pugixml/src/pugixml.hpp" "$WORK/pugixml/src/pugiconfig.hpp" "$SYS/include/"
+    rm -f "$SYS/lib/libpugixml.a"; m68k-amigaos-ar rcs "$SYS/lib/libpugixml.a" "$WORK/obj/pugixml"/*.o
+    echo "$PUGIXML_COMMIT" > "$WORK/.stamp-pugixml"
+fi
+echo "stage pugixml: $(ls -l "$SYS/lib/libpugixml.a" | awk '{print $5}') bytes"
+if ! stamp json "$JSON_COMMIT"; then
+    gitpin "$JSON_GIT" "$JSON_COMMIT" "$WORK/json"
+    rm -rf "$SYS/include/nlohmann"; cp -R "$WORK/json/single_include/nlohmann" "$SYS/include/nlohmann"
+    echo "$JSON_COMMIT" > "$WORK/.stamp-json"
+fi
+echo "stage json: headers"
+
+# Lucene++ (Poedit's fork; translation memory), built from the source list
+# and Config.h Poedit's own build uses (deps/lucene)
+if ! stamp lucene "$LUCENE_COMMIT"; then
+    gitpin "$LUCENE_GIT" "$LUCENE_COMMIT" "$WORK/lucene"
+    L="$WORK/lucene"; PL="$POE/deps/lucene"
+    srcs=$(sed -n '/^  sources {/,/^  }/p' "$PL/LucenePlusPlus.bkl" | grep -E '^ +src/.*\.(cpp|c)$' | grep -v msvc | sed 's/^ *//')
+    [ -n "$srcs" ] || { echo "no Lucene++ sources in $PL/LucenePlusPlus.bkl"; exit 1; }
+    cc_many "$WORK/obj/lucene" "$L" "-std=gnu++17 -DLPP_BUILDING_LIB -I$PL -I$PL/std_replacements -I$L/include -I$L/src/core/include -I$SYS/include -I$PD/include" $srcs
+    rm -f "$SYS/lib/liblucene++.a"; m68k-amigaos-ar rcs "$SYS/lib/liblucene++.a" "$WORK/obj/lucene"/*.o
+    rm -rf "$SYS/include/lucene++"; mkdir -p "$SYS/include/lucene++"
+    cp "$L"/include/*.h "$PL/Config.h" "$SYS/include/lucene++/"
+    echo "$LUCENE_COMMIT" > "$WORK/.stamp-lucene"
+fi
+echo "stage lucene: $(ls -l "$SYS/lib/liblucene++.a" | awk '{print $5}') bytes"

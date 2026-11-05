@@ -30,8 +30,10 @@ grep -h 'O_DIRECTORY\|O_CLOEXEC\|define O_NOFOLLOW' "$TOOLCHAIN/m68k-amigaos/sys
 grep -c wstring "$TOOLCHAIN"/lib/gcc/m68k-amigaos/*/include/c++/bits/stringfwd.h | sed 's/^/stage wstring in stringfwd: /'
 
 # which of the stove's headers define read, close or times as macros
-printf '#include <pthread.h>\n' | m68k-amigaos-g++ $CXXF -dM -E -x c++ - | grep -E '#define (read|write|close|open|times|lseek|get|put)[ (]' | sed 's/^/stage macro: /' || true
-printf '#include <pthread.h>\n' | m68k-amigaos-g++ $CXXF -H -E -x c++ - 2>&1 >/dev/null | grep '^\.' | head -30 | sed 's/^/stage pthread.h: /' || true
+for x in "" -U_DEFAULT_SOURCE; do
+    printf '#include <iterator>\n' | m68k-amigaos-g++ $CXXF $x -dM -E -x c++ - | grep -E '#define (read|write|close|open|times|lseek|get|put)[ (]' | sed "s/^/stage macro$x: /" || true
+done
+printf '#include <iterator>\n' | m68k-amigaos-g++ $CXXF -H -E -x c++ - 2>&1 >/dev/null | grep -A12 'gthr-default' | head -16 | sed 's/^/stage pthread.h: /' || true
 
 # Boost
 if ! stamp boost "$BOOST_SHA256"; then

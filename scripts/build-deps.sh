@@ -69,7 +69,11 @@ if ! stamp boost "$BOOST_SHA256"; then
         [ -f "$o" ] || { fails=$((fails+1)); echo "FAIL $f"; head -c 2000 "$o.err"; }
     done
     grep -h "error" "$O"/*.err 2>/dev/null | sort | uniq -c | sort -rn | head -20
-    [ "$fails" -eq 0 ] || { echo "boost: $fails files failed"; exit 1; }
+    if [ "$fails" -ne 0 ]; then
+        first=$(ls "$O"/*.err | while read e; do [ -f "${e%.err}" ] || { echo "$e"; break; }; done)
+        echo "first failure in full: $first"; grep -v '^ ' "$first" | head -60 | sed 's/^/ERR /'
+        echo "boost: $fails files failed"; exit 1
+    fi
     rm -f "$SYS/lib/libboost_poedit.a"; m68k-amigaos-ar rcs "$SYS/lib/libboost_poedit.a" "$O"/*.o
     echo "$BOOST_SHA256" > "$WORK/.stamp-boost"
 fi

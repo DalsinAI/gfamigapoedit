@@ -30,7 +30,7 @@ echo "poedit: $(git -C "$WORK/deps/poedit" log --oneline -1)"
 
 # the libraries
 TOOLCHAIN="$TC" WORK="$WORK" JOBS=$JOBS sh "$HERE/scripts/build-deps.sh" > "$WORK.deps.log" 2>&1 \
-    || { grep '^stage ' "$WORK.deps.log"; grep -v '^ \|warning\|^stage ' "$WORK.deps.log" | cut -c1-240 | tail -40; exit 1; }
+    || { grep '^stage ' "$WORK.deps.log"; grep '^ERR ' "$WORK.deps.log" | cut -c1-500; grep -v '^ \|warning\|^stage \|^ERR ' "$WORK.deps.log" | cut -c1-240 | tail -15; exit 1; }
 grep "^stage " "$WORK.deps.log" || true
 echo "libraries: $(( $(date +%s) - t0 )) s"
 

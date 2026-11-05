@@ -29,6 +29,10 @@ printf "#include <string>\\n#include <atomic>\\n#include <mutex>\\n" | m68k-amig
 grep -h 'O_DIRECTORY\|O_CLOEXEC\|define O_NOFOLLOW' "$TOOLCHAIN/m68k-amigaos/sys-include/fcntl.h" "$TOOLCHAIN/m68k-amigaos/sys-include/sys/"*fcntl*.h 2>/dev/null | sed 's/^/stage fcntl: /' || true
 grep -c wstring "$TOOLCHAIN"/lib/gcc/m68k-amigaos/*/include/c++/bits/stringfwd.h | sed 's/^/stage wstring in stringfwd: /'
 
+# which of the stove's headers define read, close or times as macros
+printf '#include <pthread.h>\n' | m68k-amigaos-g++ $CXXF -dM -E -x c++ - | grep -E '#define (read|write|close|open|times|lseek|get|put)[ (]' | sed 's/^/stage macro: /' || true
+printf '#include <pthread.h>\n' | m68k-amigaos-g++ $CXXF -H -E -x c++ - 2>&1 >/dev/null | grep '^\.' | head -30 | sed 's/^/stage pthread.h: /' || true
+
 # Boost
 if ! stamp boost "$BOOST_SHA256"; then
     fetch "$BOOST_URL" "$BOOST_SHA256" boost.tar.xz
@@ -71,7 +75,7 @@ if ! stamp boost "$BOOST_SHA256"; then
     grep -h "error" "$O"/*.err 2>/dev/null | sort | uniq -c | sort -rn | head -20
     if [ "$fails" -ne 0 ]; then
         first=$(ls "$O"/*.err | while read e; do [ -f "${e%.err}" ] || { echo "$e"; break; }; done)
-        echo "first failure in full: $first"; grep -v '^ ' "$first" | head -60 | sed 's/^/ERR /'
+        echo "first failure in full: $first"; head -40 "$first" | sed 's/^ *//; s/^/ERR /'
         echo "boost: $fails files failed"; exit 1
     fi
     rm -f "$SYS/lib/libboost_poedit.a"; m68k-amigaos-ar rcs "$SYS/lib/libboost_poedit.a" "$O"/*.o

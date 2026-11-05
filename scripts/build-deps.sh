@@ -78,6 +78,8 @@ if ! stamp boost "$BOOST_SHA256"; then
     if [ "$fails" -ne 0 ]; then
         first=$(ls "$O"/*.err | while read e; do [ -f "${e%.err}" ] || { echo "$e"; break; }; done)
         echo "first failure in full: $first"; head -40 "$first" | sed 's/^ *//; s/^/ERR /'
+        m68k-amigaos-g++ $CXXF $DEF -I"$SYS/include" -I"$PD/include" -E -dD "$B/libs/chrono/src/process_cpu_clocks.cpp" 2>/dev/null \
+            | grep -E '^# [0-9]+ "|^#define (read|close|times)\b' | grep -B1 -E '^#define (read|close|times)\b' | sed 's/^/ERR macro /' | head -12
         echo "boost: $fails files failed"; exit 1
     fi
     rm -f "$SYS/lib/libboost_poedit.a"; m68k-amigaos-ar rcs "$SYS/lib/libboost_poedit.a" "$O"/*.o

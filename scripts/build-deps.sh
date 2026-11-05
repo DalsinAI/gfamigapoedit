@@ -12,6 +12,7 @@ PATH="$TOOLCHAIN/bin:$PATH"
 SYS="$WORK/sysroot"; D="$WORK/dl"
 mkdir -p "$SYS/include" "$SYS/lib" "$D"
 CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks"
+PD="$TOOLCHAIN/m68k-amigaos/port-deps"
 
 fetch() { # url sha file
     if [ ! -f "$D/$3" ] || ! echo "$2  $D/$3" | sha256sum -c - >/dev/null 2>&1; then
@@ -21,6 +22,12 @@ fetch() { # url sha file
     fi
 }
 stamp() { [ "$(cat "$WORK/.stamp-$1" 2>/dev/null)" = "$2" ]; }
+
+# what the C++ library gives (Boost's config reads these)
+printf "#include <string>\\n#include <atomic>\\n#include <mutex>\\n" | m68k-amigaos-g++ $CXXF -dM -E -x c++ - \
+    | grep -E '_GLIBCXX_USE_WCHAR_T|_GLIBCXX_HAS_GTHREADS|_GLIBCXX_USE_C99|__GCC_ATOMIC_(CHAR|INT|POINTER)_LOCK_FREE|_REENTRANT|__amigaos__|__AMIGA__|_GLIBCXX_HAVE_WCHAR' | sort | sed 's/^/stage cxx: /'
+grep -h 'O_DIRECTORY\|O_CLOEXEC\|define O_NOFOLLOW' "$TOOLCHAIN/m68k-amigaos/sys-include/fcntl.h" "$TOOLCHAIN/m68k-amigaos/sys-include/sys/"*fcntl*.h 2>/dev/null | sed 's/^/stage fcntl: /' || true
+grep -c wstring "$TOOLCHAIN"/lib/gcc/m68k-amigaos/*/include/c++/bits/stringfwd.h | sed 's/^/stage wstring in stringfwd: /'
 
 # Boost
 if ! stamp boost "$BOOST_SHA256"; then
@@ -44,7 +51,7 @@ if ! stamp boost "$BOOST_SHA256"; then
     fails=0
     for f in "$@"; do
         o="$O/$(echo "$f" | tr / _ | sed 's/\.cpp$/.o/')"
-        ( m68k-amigaos-g++ $CXXF $DEF -I"$SYS/include" -I"$B/libs/filesystem/src" -I"$B/libs/atomic/src" \
+        ( m68k-amigaos-g++ $CXXF $DEF -I"$SYS/include" -I"$PD/include" -I"$B/libs/filesystem/src" -I"$B/libs/atomic/src" \
             -c "$B/libs/$f" -o "$o" 2> "$o.err" || { echo "FAIL $f"; head -c 1500 "$o.err"; exit 1; } ) &
         while [ "$(jobs -p | wc -l)" -ge "$JOBS" ]; do sleep 1; done
     done
@@ -53,6 +60,7 @@ if ! stamp boost "$BOOST_SHA256"; then
         o="$O/$(echo "$f" | tr / _ | sed 's/\.cpp$/.o/')"
         [ -f "$o" ] || { fails=$((fails+1)); echo "FAIL $f"; head -c 2000 "$o.err"; }
     done
+    grep -h "error" "$O"/*.err 2>/dev/null | sort | uniq -c | sort -rn | head -20
     [ "$fails" -eq 0 ] || { echo "boost: $fails files failed"; exit 1; }
     rm -f "$SYS/lib/libboost_poedit.a"; m68k-amigaos-ar rcs "$SYS/lib/libboost_poedit.a" "$O"/*.o
     echo "$BOOST_SHA256" > "$WORK/.stamp-boost"

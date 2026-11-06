@@ -1619,7 +1619,7 @@ xml_node_struct *xml_text::data_new()
     return xml_node(_root).append_child(node_pcdata).internal_object();
 }
 
-xml_text::operator bool() const { return data_node() != nullptr; }
+bool xml_text::has_data() const { return data_node() != nullptr; }
 const char_t *xml_text::get() const { auto *d = data_node(); return d ? sz(d->value) : ""; }
 const char_t *xml_text::as_string(const char_t *def) const { auto *d = data_node(); return d ? sz(d->value) : def; }
 int xml_text::as_int(int def) const { auto *d = data_node(); return d ? (int)strtol(d->value.c_str(), nullptr, 0) : def; }

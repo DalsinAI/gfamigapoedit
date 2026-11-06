@@ -1,0 +1,72 @@
+AmigaOS: no single-instance IPC (the toolkit's base has no wxIPC) and no file system watcher yet.
+
+diff -ru a/src/edapp.cpp b/src/edapp.cpp
+--- a/src/edapp.cpp	2026-11-06 15:23:47.644445215 +0000
++++ b/src/edapp.cpp	2026-11-06 15:23:47.664371429 +0000
+@@ -109,7 +109,7 @@
+ #include "welcomescreen.h"
+ 
+ 
+-#ifndef __WXOSX__
++#if !defined(__WXOSX__) && wxUSE_IPC
+ 
+ // IPC for ensuring that only one instance of Poedit runs at a time. This is
+ // handled native on macOS and GtkApplication could do it under GTK+3, but wx
+@@ -366,7 +366,7 @@
+     wxSetWorkingDirectory(wxGetHomeDir());
+ #endif
+ 
+-#ifndef __WXOSX__
++#if !defined(__WXOSX__) && wxUSE_IPC
+     m_remoteServer.reset(new RemoteServer(this));
+ #endif
+ 
+@@ -827,7 +827,7 @@
+     if ( parser.Found(CL_KEEP_TEMP_FILES) )
+         TempDirectory::KeepFiles();
+ 
+-#ifndef __WXOSX__
++#if !defined(__WXOSX__) && wxUSE_IPC
+     RemoteClient client(m_instanceChecker.get());
+     switch (client.ConnectIfNeeded())
+     {
+diff -ru a/src/filemonitor.cpp b/src/filemonitor.cpp
+--- a/src/filemonitor.cpp	2026-11-06 15:23:47.648121892 +0000
++++ b/src/filemonitor.cpp	2026-11-06 15:23:47.665093067 +0000
+@@ -106,7 +106,18 @@
+ namespace
+ {
+ 
++#if wxUSE_FSWATCHER
+ const int MONITORING_FLASG = wxFSW_EVENT_CREATE | wxFSW_EVENT_RENAME | wxFSW_EVENT_MODIFY;
++#else
++// no file system watcher in the toolkit (AmigaOS): open files aren't watched
++// for changes made by other programs
++const int MONITORING_FLASG = 0;
++struct wxFileSystemWatcher
++{
++    void Add(const wxFileName&, int) {}
++    void Remove(const wxFileName&) {}
++};
++#endif
+ 
+ class FSWatcher
+ {
+@@ -154,6 +165,9 @@
+         if (m_watcher)
+             return;  // already initiated
+ 
++#if !wxUSE_FSWATCHER
++        return;
++#else
+         m_watcher.reset(new wxFileSystemWatcher());
+         m_watcher->Bind(wxEVT_FSWATCHER, [=](wxFileSystemWatcherEvent& event)
+         {
+@@ -167,6 +181,7 @@
+         for (auto& dir : m_pending)
+             Add(dir);
+         m_pending.clear();
++#endif
+     }
+ 
+     static void CleanUp() { ms_instance.reset(); }

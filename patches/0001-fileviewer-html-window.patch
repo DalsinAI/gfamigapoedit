@@ -1,45 +1,54 @@
 AmigaOS: the code viewer on wx's HTML window, as the toolkit has no web engine.
 
 diff -ru a/src/fileviewer.cpp b/src/fileviewer.cpp
---- a/src/fileviewer.cpp	2026-11-06 06:56:12.209402799 +0000
-+++ b/src/fileviewer.cpp	2026-11-06 06:56:12.226449346 +0000
-@@ -42,7 +42,11 @@
+--- a/src/fileviewer.cpp	2026-11-06 15:23:37.481739886 +0000
++++ b/src/fileviewer.cpp	2026-11-06 15:23:31.794623367 +0000
+@@ -42,7 +42,20 @@
  #include <wx/ffile.h>
  #include <wx/stdpaths.h>
  #include <wx/utils.h>
 +#ifdef __WXOPENLAYOUT__
 +#include <wx/html/htmlwin.h>
++namespace
++{
++// wx's HTML window keeps ScrollToAnchor protected
++struct CodeHtmlWindow : public wxHtmlWindow
++{
++    using wxHtmlWindow::wxHtmlWindow;
++    void ScrollToMark() { ScrollToAnchor("mark"); }
++};
++} // anonymous namespace
 +#else
  #include <wx/webview.h>
 +#endif
  
  #ifdef __WXMSW__
  #include <wx/msw/webview_ie.h>
-@@ -149,6 +153,10 @@
+@@ -149,6 +162,10 @@
          wxWebViewIE::MSWSetEmulationLevel(wxWEBVIEWIE_EMU_IE11);
          m_content = wxWebView::New(panel, wxID_ANY);
      }
 +#elif defined(__WXOPENLAYOUT__)
 +    // AmigaOS: no web engine in the toolkit; wx's own HTML window shows the
 +    // file (without PrismJS's colours)
-+    m_content = new wxHtmlWindow(panel, wxID_ANY);
++    m_content = new CodeHtmlWindow(panel, wxID_ANY);
  #else
      m_content = wxWebView::New(panel, wxID_ANY);
  #endif
-@@ -353,7 +361,12 @@
+@@ -353,7 +370,12 @@
      else
  #endif
      {
 +#ifdef __WXOPENLAYOUT__
 +        m_content->SetPage(markup);
-+        m_content->ScrollToAnchor("mark");
++        static_cast<CodeHtmlWindow*>(m_content)->ScrollToMark();
 +#else
          m_content->SetPage(markup, "file:///");
 +#endif
      }
  }
  
-@@ -437,6 +450,23 @@
+@@ -437,6 +459,23 @@
  
  wxString FileToHTMLMarkup(const wxTextFile& file, const wxString& ext, size_t lineno)
  {
@@ -64,8 +73,8 @@ diff -ru a/src/fileviewer.cpp b/src/fileviewer.cpp
          R"(<!DOCTYPE html>
          <html>
 diff -ru a/src/fileviewer.h b/src/fileviewer.h
---- a/src/fileviewer.h	2026-11-06 06:56:12.209438374 +0000
-+++ b/src/fileviewer.h	2026-11-06 06:56:12.225277958 +0000
+--- a/src/fileviewer.h	2026-11-06 15:23:37.482092141 +0000
++++ b/src/fileviewer.h	2026-11-06 15:23:31.780123842 +0000
 @@ -36,7 +36,11 @@
  class WXDLLIMPEXP_FWD_CORE wxChoice;
  class WXDLLIMPEXP_FWD_CORE wxStaticText;

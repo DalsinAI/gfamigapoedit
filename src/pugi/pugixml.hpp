@@ -124,7 +124,9 @@ public:
     xml_attribute() : _attr(nullptr) {}
     explicit xml_attribute(xml_attribute_struct *a) : _attr(a) {}
 
-    explicit operator bool() const { return _attr != nullptr; }
+    // like pugixml: tests as bool and converts where a bool is returned
+    typedef void (*unspecified_bool_type)(xml_attribute***);
+    operator unspecified_bool_type() const { return _attr ? _ub : nullptr; }
     bool operator!() const { return !_attr; }
     bool operator==(const xml_attribute& r) const { return _attr == r._attr; }
     bool operator!=(const xml_attribute& r) const { return _attr != r._attr; }
@@ -161,6 +163,7 @@ public:
 
     xml_attribute_struct *internal_object() const { return _attr; }
 private:
+    static void _ub(xml_attribute***) {}
     xml_attribute_struct *_attr;
 };
 
@@ -221,7 +224,8 @@ public:
     xml_node() : _root(nullptr) {}
     explicit xml_node(xml_node_struct *p) : _root(p) {}
 
-    explicit operator bool() const { return _root != nullptr; }
+    typedef void (*unspecified_bool_type)(xml_node***);
+    operator unspecified_bool_type() const { return _root ? _ub : nullptr; }
     bool operator!() const { return !_root; }
     bool operator==(const xml_node& r) const { return _root == r._root; }
     bool operator!=(const xml_node& r) const { return _root != r._root; }
@@ -341,6 +345,7 @@ public:
 
 protected:
     xml_node_struct *_root;
+    static void _ub(xml_node***) {}
 };
 
 class xml_node_iterator
@@ -396,9 +401,10 @@ class xml_text
     friend class xml_node;
 public:
     xml_text() : _root(nullptr) {}
-    explicit operator bool() const;
-    bool operator!() const { return !(bool)*this; }
-    bool empty() const { return !(bool)*this; }
+    typedef void (*unspecified_bool_type)(xml_text***);
+    operator unspecified_bool_type() const { return has_data() ? _ub : nullptr; }
+    bool operator!() const { return !has_data(); }
+    bool empty() const { return !has_data(); }
 
     const char_t *get() const;
     const char_t *as_string(const char_t *def = "") const;
@@ -423,6 +429,8 @@ public:
 
     xml_node data() const;
 private:
+    static void _ub(xml_text***) {}
+    bool has_data() const;
     explicit xml_text(xml_node_struct *root) : _root(root) {}
     xml_node_struct *data_node() const;
     xml_node_struct *data_new();
@@ -486,11 +494,13 @@ public:
     xml_attribute attribute() const { return _attribute; }
     xml_node parent() const { return _attribute ? _node : _node.parent(); }
 
-    explicit operator bool() const { return _node || _attribute; }
-    bool operator!() const { return !(bool)*this; }
+    typedef void (*unspecified_bool_type)(xpath_node***);
+    operator unspecified_bool_type() const { return (_node || _attribute) ? _ub : nullptr; }
+    bool operator!() const { return !(_node || _attribute); }
     bool operator==(const xpath_node& n) const { return _node == n._node && _attribute == n._attribute; }
     bool operator!=(const xpath_node& n) const { return !(*this == n); }
 private:
+    static void _ub(xpath_node***) {}
     xml_node _node;
     xml_attribute _attribute;
 };

@@ -13,7 +13,7 @@ cc_many() {
         [ -f "$o" ] && [ "$o" -nt "$root/$f" ] && continue
         # past the deadline: the rest next run (the objects made so far stay)
         if [ -n "${CC_DEADLINE:-}" ] && [ "$(date +%s)" -ge "$CC_DEADLINE" ]; then late=1; break; fi
-        case "$f" in *.c) c=m68k-amigaos-gcc; std="-std=gnu99"; inc="" ;; *) c=m68k-amigaos-g++; std=""; inc="-include $HERE/scripts/amiga-nocancel.h" ;; esac
+        case "$f" in *.c) c=m68k-amigaos-gcc; std="-std=gnu99"; inc="" ;; *) c=m68k-amigaos-g++; std=""; inc="-include boost/config/platform/amigaos_nocancel.hpp" ;; esac
         ( ulimit -v ${CC_MEM_KB:-2500000}; $c $CF $std $inc $fl -c "$root/$f" -o "$o.part" 2> "$o.err" && mv "$o.part" "$o" ) &
         while [ "$(jobs -p | wc -l)" -ge "$JOBS" ]; do sleep 1; done
     done

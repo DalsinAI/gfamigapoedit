@@ -12,7 +12,7 @@ WORK=${WORK:-$HOME/.cache/gfamigapoedit/build}; JOBS=${JOBS:-12}
 PATH="$TOOLCHAIN/bin:$PATH"
 SYS="$WORK/sysroot"; D="$WORK/dl"
 mkdir -p "$SYS/include" "$SYS/lib" "$D"
-CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE -include $HERE/scripts/amiga-nocancel.h"
+CXXF="-noixemul -m68040 -O2 -std=gnu++17 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
 PD="$TOOLCHAIN/m68k-amigaos/port-deps"
 CF="-noixemul -m68040 -O2 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
 POE=${POEDIT_SRC:-$WORK/deps/poedit}
@@ -34,18 +34,6 @@ gitpin() { # url commit dir
 }
 . "$HERE/scripts/cc-many.sh"
 
-# what the C++ library gives (Boost's config reads these)
-printf "#include <string>\\n#include <atomic>\\n#include <mutex>\\n" | m68k-amigaos-g++ $CXXF -dM -E -x c++ - \
-    | grep -E '_GLIBCXX_USE_WCHAR_T|_GLIBCXX_HAS_GTHREADS|_GLIBCXX_USE_C99|__GCC_ATOMIC_(CHAR|INT|POINTER)_LOCK_FREE|_REENTRANT|__amigaos__|__AMIGA__|_GLIBCXX_HAVE_WCHAR' | sort | sed 's/^/stage cxx: /'
-grep -h 'O_DIRECTORY\|O_CLOEXEC\|define O_NOFOLLOW' "$TOOLCHAIN/m68k-amigaos/sys-include/fcntl.h" "$TOOLCHAIN/m68k-amigaos/sys-include/sys/"*fcntl*.h 2>/dev/null | sed 's/^/stage fcntl: /' || true
-grep -c wstring "$TOOLCHAIN"/lib/gcc/m68k-amigaos/*/include/c++/bits/stringfwd.h | sed 's/^/stage wstring in stringfwd: /'
-
-# which of the stove's headers define read, close or times as macros
-for x in "" -U_DEFAULT_SOURCE; do
-    printf '#include <iterator>\n' | m68k-amigaos-g++ $CXXF $x -dM -E -x c++ - | grep -E '#define (read|write|close|open|times|lseek|get|put)[ (]' | sed "s/^/stage macro$x: /" || true
-done
-printf '#include <iterator>\n' | m68k-amigaos-g++ $CXXF -H -E -x c++ - 2>&1 >/dev/null | grep -A12 'gthr-default' | head -16 | sed 's/^/stage pthread.h: /' || true
-
 # Boost: the shared GFOpenBoost SDK (headers with its one Amiga config, and
 # its libboost_<part>.a), never a Boost of our own
 if ! stamp boost "$GFBOOST_SHA256"; then
@@ -57,7 +45,6 @@ if ! stamp boost "$GFBOOST_SHA256"; then
     rm -rf "$SYS/include/boost" "$SYS/lib"/libboost_*.a
     cp -R "$G/include/boost" "$SYS/include/boost"
     cp "$G"/lib/libboost_*.a "$SYS/lib/"
-    cp "$HERE/scripts/amiga-nocancel.h" "$SYS/include/amiga-nocancel.h"
     echo "$GFBOOST_SHA256" > "$WORK/.stamp-boost"
 fi
 echo "stage boost: gfopenboost $(head -1 "$(find "$WORK/gfopenboost" -maxdepth 2 -name boost.txt | head -1)" | cut -c1-60), $(ls "$SYS/lib"/libboost_*.a | wc -l) libraries"

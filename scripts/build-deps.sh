@@ -141,7 +141,8 @@ echo "stage json: headers"
 
 # Lucene++ (Poedit's fork; translation memory), built from the source list
 # and Config.h Poedit's own build uses (deps/lucene)
-if ! stamp lucene "$LUCENE_COMMIT"; then
+# (held back while finding what takes Daletop's job runner down)
+if [ "${BUILD_LUCENE:-0}" = 1 ] && ! stamp lucene "$LUCENE_COMMIT"; then
     gitpin "$LUCENE_GIT" "$LUCENE_COMMIT" "$WORK/lucene"
     L="$WORK/lucene"; PL="$POE/deps/lucene"
     srcs=$(sed -n '/^  sources {/,/^  }/p' "$PL/LucenePlusPlus.bkl" | grep -E '^ +src/.*\.(cpp|c)$' | grep -v msvc | sed 's/^ *//')
@@ -152,4 +153,4 @@ if ! stamp lucene "$LUCENE_COMMIT"; then
     cp "$L"/include/*.h "$PL/Config.h" "$SYS/include/lucene++/"
     echo "$LUCENE_COMMIT" > "$WORK/.stamp-lucene"
 fi
-echo "stage lucene: $(ls -l "$SYS/lib/liblucene++.a" | awk '{print $5}') bytes"
+echo "stage lucene: $(ls -l "$SYS/lib/liblucene++.a" 2>/dev/null | awk '{print $5}') bytes"

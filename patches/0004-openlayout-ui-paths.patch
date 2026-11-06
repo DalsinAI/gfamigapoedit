@@ -1,0 +1,64 @@
+AmigaOS (OpenLayout toolkit): the GTK button and list paths, the toolkit's own control face as the default font, and the real wxMessageDialog declaration.
+
+diff -ru a/src/manager.cpp b/src/manager.cpp
+--- a/src/manager.cpp	2026-11-06 15:40:24.512044670 +0000
++++ b/src/manager.cpp	2026-11-06 15:40:24.537338163 +0000
+@@ -146,7 +146,7 @@
+     auto btn_new = new wxBitmapButton(panel, wxID_ANY, wxArtProvider::GetBitmap("list-add"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+     auto btn_delete = new wxBitmapButton(panel, wxID_ANY, wxArtProvider::GetBitmap("list-remove"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+     int editButtonStyle = wxBU_EXACTFIT;
+-#elif defined(__WXGTK__)
++#elif defined(__WXGTK__) || defined(__WXOPENLAYOUT__)
+     auto btn_new = new wxBitmapButton(panel, wxID_ANY, wxArtProvider::GetBitmap("list-add@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+     auto btn_delete = new wxBitmapButton(panel, wxID_ANY, wxArtProvider::GetBitmap("list-remove@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+     int editButtonStyle = wxBU_EXACTFIT | wxBORDER_NONE;
+diff -ru a/src/prefsdlg.cpp b/src/prefsdlg.cpp
+--- a/src/prefsdlg.cpp	2026-11-06 15:40:24.519672849 +0000
++++ b/src/prefsdlg.cpp	2026-11-06 19:31:57.307873971 +0000
+@@ -291,6 +291,9 @@
+             #define DEFAULT_FONT "Arial"
+         #elif defined(__WXGTK__)
+             #define DEFAULT_FONT "sans serif"
++        #elif defined(__WXOPENLAYOUT__)
++            // the face the toolkit gives its own controls
++            #define DEFAULT_FONT wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT).GetFaceName()
+         #endif
+         auto listFont = wxFont(cfg.Read("custom_font_list_name", ""));
+         if (!listFont.IsOk())
+@@ -757,7 +760,7 @@
+         m_new = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-add"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+         m_delete = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-remove"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+         int editButtonStyle = wxBU_EXACTFIT;
+-#elif defined(__WXGTK__)
++#elif defined(__WXGTK__) || defined(__WXOPENLAYOUT__)
+         m_new = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-add@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+         m_delete = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-remove@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+         int editButtonStyle = wxBU_EXACTFIT | wxBORDER_NONE;
+diff -ru a/src/progress_ui.h b/src/progress_ui.h
+--- a/src/progress_ui.h	2026-11-06 15:40:24.508179538 +0000
++++ b/src/progress_ui.h	2026-11-06 15:40:24.537061205 +0000
+@@ -42,7 +42,12 @@
+ class WXDLLIMPEXP_FWD_CORE wxStaticBitmap;
+ class WXDLLIMPEXP_FWD_CORE wxStaticText;
+ class WXDLLIMPEXP_FWD_CORE wxGauge;
++#ifdef __WXOPENLAYOUT__
++// wxMessageDialog is wx's generic one there, a macro a forward declaration misses
++#include <wx/msgdlg.h>
++#else
+ class WXDLLIMPEXP_FWD_CORE wxMessageDialog;
++#endif
+ class ActivityIndicator;
+ class SecondaryLabel;
+ 
+diff -ru a/src/propertiesdlg.cpp b/src/propertiesdlg.cpp
+--- a/src/propertiesdlg.cpp	2026-11-06 15:40:24.515657664 +0000
++++ b/src/propertiesdlg.cpp	2026-11-06 15:40:24.538036252 +0000
+@@ -279,7 +279,7 @@
+ #elif defined(__WXMSW__)
+         auto add = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-add"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+         auto remove = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-remove"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+-#elif defined(__WXGTK__)
++#elif defined(__WXGTK__) || defined(__WXOPENLAYOUT__)
+         auto add = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-add@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+         auto remove = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-remove@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+ #endif

@@ -1,0 +1,24 @@
+diff -ru a/src/custom_buttons.h b/src/custom_buttons.h
+--- a/src/custom_buttons.h	2026-11-06 14:41:45.384044679 +0000
++++ b/src/custom_buttons.h	2026-11-06 14:41:45.391174405 +0000
+@@ -41,7 +41,7 @@
+ 
+ #if defined(__WXOSX__)
+ typedef wxNativeWindow ActionButtonBase;
+-#elif defined(__WXGTK__)
++#elif defined(__WXGTK__) || defined(__WXOPENLAYOUT__)
+ typedef wxButton ActionButtonBase;
+ #elif defined(__WXMSW__)
+ typedef wxCommandLinkButton ActionButtonBase;
+diff -ru a/src/layout_helpers.h b/src/layout_helpers.h
+--- a/src/layout_helpers.h	2026-11-06 14:41:45.387366996 +0000
++++ b/src/layout_helpers.h	2026-11-06 14:41:45.393349610 +0000
+@@ -54,7 +54,7 @@
+         return 20;
+ #elif defined(__WXMSW__)
+     return PX(17);
+-#elif defined(__WXGTK__)
++#elif defined(__WXGTK__) || defined(__WXOPENLAYOUT__)
+     return PX(25);
+ #else
+     #error "Implement UnderCheckboxIndent() for your platform"

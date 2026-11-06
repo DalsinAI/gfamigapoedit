@@ -1,0 +1,36 @@
+# What this port builds on: fetched at build time, never shipped.
+POEDIT_GIT=https://github.com/vslavik/poedit.git
+POEDIT_TAG=v3.10-oss
+POEDIT_COMMIT=2ed0c77cb5bc57f622f5f9d07faec5d0882a1226
+# Poedit's own pin of nlohmann json (its deps/ submodule)
+JSON_GIT=https://github.com/nlohmann/json.git
+JSON_COMMIT=55f93686c01528224f448c19128836e7df245f72
+# Our own pieces, fetched at these commits
+WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
+# (team3/poedit-toolkit-20261106: main with the font picker and activity indicator)
+WXT_COMMIT=3ba79b2b208a1baec1c19ae08072e837456e292b
+OXP_REPO=https://github.com/DalsinAI/gfopenxml
+OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
+# transmem.library (GFOpenTransMem), the translation memory on SQLite: the
+# release's SDK (headers and libtransmem.a)
+TRANSMEM_URL=https://github.com/DalsinAI/gfopentransmem/releases/download/v1.0-rc1/GFOpenTransMem-1.0-rc1.zip
+TRANSMEM_SHA256=add88417775a515d41f0fbb1c2ae4cc834444d069ef187e5e007eaa25f92a778
+# Boost: the shared GFOpenBoost SDK (Poedit's Linux build uses Boost.Thread
+# futures and executors, Filesystem, Chrono, Date_Time, Iostreams)
+GFBOOST_URL=https://github.com/DalsinAI/gfopenboost/releases/download/v1.89.0-rc1/gfopenboost-1.89.0-sdk.tar.xz
+GFBOOST_SHA256=a6cad796bc9f7ac84e81704bef6553f63588255eb7012512d0359654507be52a
+# ICU's headers only: Poedit calls ICU's C functions, and they go to our
+# unicode.library (GFOpenBrowser src/unicodelib, at UL_COMMIT) through its stubs
+ICU_VERSION=78.3
+ICU_URL=https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz
+ICU_SHA256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
+UL_REPO=https://github.com/DalsinAI/gfopenbrowser
+# gfopenbrowser PR #187's branch (the 16 calls Poedit adds) until it merges
+UL_COMMIT=67b6e5dcdf9f1874c6715b638d78b1c68a0e14a6
+# GFOpenSDK's NDK headers that unicode.library builds with (as its CI pins them)
+UL_SDK_REPO=https://github.com/DalsinAI/gfopensdk
+UL_SDK_COMMIT=5bfeaea0d004e86afb990fddb591bf0039f09233
+# A lab SDK already built at the toolkit's commit (a job's
+# gfopenwx-sdk.tar.gz) in place of building the toolkit here; empty: build it
+WXT_SDK_JOB=j20261106T184431-30f18d
+WXT_SDK_SHA256=fa2d7e63d06f8bba0f5e28ac820e0594bea2f64358a76f025824733478e65e3d

@@ -24,7 +24,9 @@ cc_many() {
         o="$od/$(echo "$f" | tr / _ | sed 's/\.c[p]*$/.o/')"
         if [ ! -f "$o" ]; then
             n=$((n+1))
-            [ "$n" -gt 1 ] || { echo "FAIL $f"; head -40 "$o.err" | sed 's/^ *//; s/^/ERR /'; }
+            if [ "$n" -eq 1 ]; then echo "FAIL $f"; head -40 "$o.err" | sed 's/^ *//; s/^/ERR /'
+            # the first errors of a few more files, so one run shows more
+            elif [ "$n" -le 10 ]; then grep -m 4 'error' "$o.err" | cut -c1-300 | sed 's/^ *//; s/^/ERR /'; fi
             echo "FAIL $f"
         fi
     done

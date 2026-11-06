@@ -20,6 +20,8 @@ CF="-noixemul -m68040 -O2 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
 # gives it a new time and cc_many builds it again
 # and our patches (patches/NNNN-*.patch, paths a/src/...) on a fresh copy
 S="$WORK/poedit-src"
+# json.h takes nlohmann from ../deps/json, next to the src copy
+[ -e "$WORK/deps/json/single_include" ] || { mkdir -p "$WORK/deps"; ln -sfn "$WORK/json" "$WORK/deps/json"; }
 REV="$POEDIT_COMMIT-$(cat "$HERE"/patches/[0-9]*.patch 2>/dev/null | sha256sum | cut -c1-16)"
 if [ "$(cat "$S/.rev" 2>/dev/null)" != "$REV" ]; then
     rm -rf "$S"; cp -Rp "$POE/src" "$S"

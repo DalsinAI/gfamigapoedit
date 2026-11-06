@@ -27,6 +27,9 @@ ICU_SHA256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
 UL_REPO=https://github.com/DalsinAI/gfopenbrowser
 # gfopenbrowser PR #187's branch (the 16 calls Poedit adds) until it merges
 UL_COMMIT=67b6e5dcdf9f1874c6715b638d78b1c68a0e14a6
+# GFOpenSDK's NDK headers that unicode.library builds with (as its CI pins them)
+UL_SDK_REPO=https://github.com/DalsinAI/gfopensdk
+UL_SDK_COMMIT=5bfeaea0d004e86afb990fddb591bf0039f09233
 # A lab SDK already built at the toolkit's commit (a job's
 # gfopenwx-sdk.tar.gz) in place of building the toolkit here; empty: build it
 WXT_SDK_JOB=j20261106T184431-30f18d

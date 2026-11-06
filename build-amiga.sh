@@ -102,4 +102,9 @@ case $rc in
     *) grep '^ERR \|^FAIL \|undefined' "$WORK.poedit.log" | cut -c1-400 | head -60; tail -5 "$WORK.poedit.log" | cut -c1-300; exit 1 ;;
 esac
 WORK="$WORK" OUT="$OUT" HERE="$HERE" sh "$HERE/scripts/lab-kit.sh" || true
+# unicode.library with the calls Poedit adds, for the lab (own stamps, goes on next run)
+rc=0
+STOVE="$STOVE" WORK="$WORK" OUT="$OUT" UL_DEADLINE=$(( t0 + ${BUDGET_TOTAL:-840} - 25 )) \
+    timeout $(( $(left) - 20 )) sh "$HERE/scripts/build-unicodelib.sh" || rc=$?
+case $rc in 0|3) ;; 124) echo "unicode.library: stopped at the time cap, goes on next run" ;; *) echo "unicode.library: failed ($rc)" ;; esac
 echo "total: $(( $(date +%s) - t0 )) s"

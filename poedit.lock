@@ -16,10 +16,10 @@ OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
 SQLITE_URL=https://raw.githubusercontent.com/audacity/audacity/86d74c770974b25188ca2f23bcce47c1181bd08a/lib-src/sqlite
 SQLITE_C_SHA256=ae3f047cbf30795f0b3cd20f035cd083be075142e69a9c081777ce2aa98c1d0d
 SQLITE_H_SHA256=0809b65babc4176fc31c4732c66cd1be6f35c86cb08902f707381e29ef259844
-# Boost (Poedit's Linux build uses Boost.Thread futures and executors)
-BOOST_VERSION=1.89.0
-BOOST_URL=https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-b2-nodocs.tar.xz
-BOOST_SHA256=875cc413afa6b86922b6df3b2ad23dec4511c8a741753e57c1129e7fa753d700
+# Boost: the shared GFOpenBoost SDK (Poedit's Linux build uses Boost.Thread
+# futures and executors, Filesystem, Chrono, Date_Time, Iostreams)
+GFBOOST_URL=https://github.com/DalsinAI/gfopenboost/releases/download/v1.89.0-rc1/gfopenboost-1.89.0-sdk.tar.xz
+GFBOOST_SHA256=a6cad796bc9f7ac84e81704bef6553f63588255eb7012512d0359654507be52a
 # ICU's headers only: Poedit calls ICU's C functions, and they go to our
 # unicode.library (GFOpenBrowser src/unicodelib, at UL_COMMIT) through its stubs
 ICU_VERSION=78.3

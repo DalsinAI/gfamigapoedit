@@ -1,7 +1,6 @@
 #!/bin/sh
-# Builds what Poedit needs besides wx into one sysroot: Boost's compiled
-# parts (thread on pthreads, filesystem, chrono, date_time,
-# iostreams without mmap/bzip2/lzma/zstd) and its headers, nlohmann json,
+# Builds what Poedit needs besides wx into one sysroot: the shared
+# GFOpenBoost SDK's headers and libraries, nlohmann json,
 # our OXP parser, SQLite, and the stubs that send ICU's calls to our
 # unicode.library.
 #   TOOLCHAIN=.../prefix WORK=build scripts/build-deps.sh
@@ -47,58 +46,21 @@ for x in "" -U_DEFAULT_SOURCE; do
 done
 printf '#include <iterator>\n' | m68k-amigaos-g++ $CXXF -H -E -x c++ - 2>&1 >/dev/null | grep -A12 'gthr-default' | head -16 | sed 's/^/stage pthread.h: /' || true
 
-# Boost
-if ! stamp boost "$BOOST_SHA256"; then
-    fetch "$BOOST_URL" "$BOOST_SHA256" boost.tar.xz
-    B="$WORK/boost-$BOOST_VERSION"; rm -rf "$B"
-    tar -C "$WORK" -xJf "$D/boost.tar.xz"
-    rm -rf "$SYS/include/boost"; cp -R "$B/boost" "$SYS/include/boost"
-    cp "$HERE/scripts/boost/amigaos.hpp" "$SYS/include/boost/config/platform/amigaos.hpp"
+# Boost: the shared GFOpenBoost SDK (headers with its one Amiga config, and
+# its libboost_<part>.a), never a Boost of our own
+if ! stamp boost "$GFBOOST_SHA256"; then
+    fetch "$GFBOOST_URL" "$GFBOOST_SHA256" gfopenboost-sdk.tar.xz
+    rm -rf "$WORK/gfopenboost"; mkdir -p "$WORK/gfopenboost"
+    tar -C "$WORK/gfopenboost" -xJf "$D/gfopenboost-sdk.tar.xz"
+    G=$(dirname "$(find "$WORK/gfopenboost" -maxdepth 2 -name boost.txt | head -1)")
+    [ -d "$G/include/boost" ] || { echo "gfopenboost: no include/boost in $GFBOOST_URL"; exit 1; }
+    rm -rf "$SYS/include/boost" "$SYS/lib"/libboost_*.a
+    cp -R "$G/include/boost" "$SYS/include/boost"
+    cp "$G"/lib/libboost_*.a "$SYS/lib/"
     cp "$HERE/scripts/amiga-nocancel.h" "$SYS/include/amiga-nocancel.h"
-    # the stove's pthreads have no pthread_condattr_setclock: condition
-    # variables wait on the real-time clock, as Boost does where there is no
-    # CLOCK_MONOTONIC
-    sed -i 's/^  #if defined(CLOCK_MONOTONIC)$/  #if defined(CLOCK_MONOTONIC) \&\& !defined(__amigaos__)/' \
-        "$SYS/include/boost/thread/detail/config.hpp"
-    grep -q 'CLOCK_MONOTONIC) && !defined(__amigaos__)' "$SYS/include/boost/thread/detail/config.hpp" \
-        || { echo "boost thread config: clock line not found"; exit 1; }
-    O="$WORK/obj/boost"; rm -rf "$O"; mkdir -p "$O"
-    DEF="-DBOOST_ALL_NO_LIB -DBOOST_THREAD_POSIX -DBOOST_THREAD_BUILD_LIB -DBOOST_THREAD_VERSION=4 \
-         -DBOOST_FILESYSTEM_STATIC_LINK -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF -DO_DIRECTORY=0 -DBOOST_IOSTREAMS_NO_LIB"
-    set --
-    for f in thread/src/pthread/thread.cpp thread/src/pthread/once.cpp thread/src/future.cpp \
-             filesystem/src/codecvt_error_category.cpp filesystem/src/directory.cpp filesystem/src/exception.cpp \
-             filesystem/src/operations.cpp filesystem/src/path.cpp filesystem/src/path_traits.cpp \
-             filesystem/src/portability.cpp filesystem/src/unique_path.cpp filesystem/src/utf8_codecvt_facet.cpp \
-             chrono/src/chrono.cpp chrono/src/thread_clock.cpp chrono/src/process_cpu_clocks.cpp \
-             date_time/src/gregorian/greg_month.cpp \
-             iostreams/src/file_descriptor.cpp iostreams/src/zlib.cpp iostreams/src/gzip.cpp; do
-        set -- "$@" "$f"
-    done
-    fails=0
-    for f in "$@"; do
-        o="$O/$(echo "$f" | tr / _ | sed 's/\.cpp$/.o/')"
-        ( m68k-amigaos-g++ $CXXF $DEF -I"$SYS/include" -I"$PD/include" -I"$B/libs/filesystem/src" -I"$B/libs/atomic/src" \
-            -c "$B/libs/$f" -o "$o" 2> "$o.err" || { echo "FAIL $f"; head -c 1500 "$o.err"; exit 1; } ) &
-        while [ "$(jobs -p | wc -l)" -ge "$JOBS" ]; do sleep 1; done
-    done
-    wait || true
-    for f in "$@"; do
-        o="$O/$(echo "$f" | tr / _ | sed 's/\.cpp$/.o/')"
-        [ -f "$o" ] || { fails=$((fails+1)); echo "FAIL $f"; head -c 2000 "$o.err"; }
-    done
-    grep -h "error" "$O"/*.err 2>/dev/null | sort | uniq -c | sort -rn | head -20
-    if [ "$fails" -ne 0 ]; then
-        first=$(ls "$O"/*.err | while read e; do [ -f "${e%.err}" ] || { echo "$e"; break; }; done)
-        echo "first failure in full: $first"; head -40 "$first" | sed 's/^ *//; s/^/ERR /'
-        m68k-amigaos-g++ $CXXF $DEF -I"$SYS/include" -I"$PD/include" -E -dD "$B/libs/chrono/src/process_cpu_clocks.cpp" 2>/dev/null \
-            | grep -E '^# [0-9]+ "|^#define (read|close|times)\b' | grep -B1 -E '^#define (read|close|times)\b' | sed 's/^/ERR macro /' | head -12
-        echo "boost: $fails files failed"; exit 1
-    fi
-    rm -f "$SYS/lib/libboost_poedit.a"; m68k-amigaos-ar rcs "$SYS/lib/libboost_poedit.a" "$O"/*.o
-    echo "$BOOST_SHA256" > "$WORK/.stamp-boost"
+    echo "$GFBOOST_SHA256" > "$WORK/.stamp-boost"
 fi
-echo "stage boost: $(ls -l "$SYS/lib/libboost_poedit.a" | awk '{print $5}') bytes"
+echo "stage boost: gfopenboost $(head -1 "$(find "$WORK/gfopenboost" -maxdepth 2 -name boost.txt | head -1)" | cut -c1-60), $(ls "$SYS/lib"/libboost_*.a | wc -l) libraries"
 
 # nlohmann json (Poedit's own pin; headers only)
 if ! stamp json "$JSON_COMMIT"; then

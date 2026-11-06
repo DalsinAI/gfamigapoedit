@@ -52,7 +52,7 @@ FL="-std=gnu++17 $("$WXC" --cxxflags) -I$S -I$S/pugi -I$SYS/include \
     -DHAVE_PUGIXML -DwxNO_UNSAFE_WXSTRING_CONV=1 -DPOEDIT_PREFIX=\"PROGDIR:\" \
     -DBOOST_ALL_NO_LIB -DBOOST_THREAD_POSIX -DBOOST_THREAD_VERSION=4 -DBOOST_THREAD_PROVIDES_EXECUTORS -Wno-deprecated-declarations"
 # new flags or a new toolkit SDK: every object again
-FH=$(printf '%s %s' "$FL" "$CF" | sha256sum | cut -c1-16)
+FH=$(printf '%s %s %s %s' "$FL" "$CF" "$GFBOOST_SHA256" "${WXT_SDK_SHA256:-$WXT_COMMIT}" | sha256sum | cut -c1-16)
 [ "$(cat "$WORK/obj/poedit/.flags" 2>/dev/null)" = "$FH" ] || { rm -rf "$WORK/obj/poedit"; mkdir -p "$WORK/obj/poedit"; echo "$FH" > "$WORK/obj/poedit/.flags"; }
 # shellcheck disable=SC2086
 cc_many "$WORK/obj/poedit" "$S" "$FL" $SRCS
@@ -62,7 +62,7 @@ O="$WORK/obj/poedit"
 mkdir -p "$OUT"
 # shellcheck disable=SC2046
 m68k-amigaos-g++ -noixemul -m68040 -specs="$SPECS" -o "$OUT/Poedit.debug" "$O"/*.o \
-    -L"$SYS/lib" -lboost_poedit -loxp -lsqlite3 -licuuc \
+    -L"$SYS/lib" -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_date_time -lboost_chrono -lboost_atomic -loxp -lsqlite3 -licuuc \
     $("$WXC" --libs core,base,adv,html,xml,xrc,aui,net) -lz -lpthread -latomic -lm \
     -Wl,-Map,"$WORK/poedit.map" > "$WORK/poedit.link.log" 2>&1 \
     || { grep -E "undefined reference|error" "$WORK/poedit.link.log" | sed 's/.*undefined reference to/undefined:/' | sort | uniq -c | sort -rn | head -60; exit 1; }

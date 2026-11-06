@@ -9,10 +9,12 @@
 # nothing third-party is kept here.
 # Copyright (c) 2026 AmiCradle Team
 set -eu
+# Daletop runs Dale's instances too: the build is niced and runs 4 jobs
+renice -n 19 $$ >/dev/null 2>&1 || true
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$HERE/poedit.lock"
 STOVE=${STOVE:-"$HOME/AmiCradle/stoves/os32-gcc16-open6"}
-WORK="${WORK:-$HOME/.cache/gfamigapoedit/build}"; OUT="${OUT:-$WORK/out}"; JOBS=${JOBS:-12}
+WORK="${WORK:-$HOME/.cache/gfamigapoedit/build}"; OUT="${OUT:-$WORK/out}"; JOBS=${JOBS:-4}
 TC="$STOVE/prefix"
 mkdir -p "$WORK/deps" "$OUT"
 t0=$(date +%s)

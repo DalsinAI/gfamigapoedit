@@ -19,3 +19,10 @@ WXT_COMMIT=e75e16f8278a2c93a23d4ba0fbf2b098c59c0ec4
 BOOST_VERSION=1.89.0
 BOOST_URL=https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-b2-nodocs.tar.xz
 BOOST_SHA256=875cc413afa6b86922b6df3b2ad23dec4511c8a741753e57c1129e7fa753d700
+# ICU (Poedit's language names, plural forms and text handling), built the
+# way GFOpenBrowser builds it, with its AmigaOS patch from this commit
+ICU_VERSION=78.3
+ICU_URL=https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz
+ICU_SHA256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
+OB_REPO=https://github.com/DalsinAI/gfopenbrowser
+OB_COMMIT=f3f41ce595fecb3d817bb5b30aa9b3371e7c4f31

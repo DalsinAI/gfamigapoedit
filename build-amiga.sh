@@ -34,6 +34,15 @@ TOOLCHAIN="$TC" WORK="$WORK" JOBS=$JOBS sh "$HERE/scripts/build-deps.sh" > "$WOR
 grep "^stage " "$WORK.deps.log" || true
 echo "libraries: $(( $(date +%s) - t0 )) s"
 
+# ICU (a host build for its tools, then the cross build)
+if [ "$(cat "$WORK/.stamp-icu" 2>/dev/null)" != "$ICU_SHA256-$OB_COMMIT" ]; then
+    [ "$(left)" -gt 420 ] || { echo "ICU next run ($(left) s left)"; exit 0; }
+    TOOLCHAIN="$TC" WORK="$WORK" JOBS=$JOBS sh "$HERE/scripts/build-icu.sh" > "$WORK.icu.log" 2>&1 \
+        || { cut -c1-300 "$WORK.icu.log" | tail -40; exit 1; }
+    grep '^stage ' "$WORK.icu.log" || true
+    echo "ICU: $(( $(date +%s) - t0 )) s"
+fi
+
 # the toolkit SDK, again only when its pinned commit changes
 fetch gfopenwxtoolkit "$WXT_REPO" "$WXT_COMMIT"
 WXB="$WORK/gfopenwx"

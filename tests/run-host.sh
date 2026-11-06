@@ -2,8 +2,7 @@
 # Host checks for our own pieces, no Amiga needed:
 #  - the pugixml layer on OXP gives the same output as pugixml itself (fetched
 #    here only to compare with, never built into the port)
-#  - the translation memory on SQLite (Poedit's types stubbed in tm-host-stubs)
-#   sh tests/run-host.sh        (needs g++, gcc, git, libsqlite3-dev)
+#   sh tests/run-host.sh        (needs g++, gcc, git)
 # Copyright (c) 2026 AmiCradle Team
 set -eu
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -23,9 +22,3 @@ if diff "$W/ref.txt" "$W/ours.txt" | grep '^[<>]' | grep -v '<value>&amp;e; A ©
     echo "pugixml layer: output differs"; exit 1
 fi
 echo "pugixml layer: same output as pugixml 1.15"
-g++ -std=gnu++17 -O1 -I"$HERE/tm-host-stubs" "$HERE/tm-host.cpp" "$ROOT/src/tm/transmem.cpp" -lsqlite3 -o "$W/tm"
-mkdir -p "$W/tmdata"; TMDIR="$W/tmdata" HOME="$W" "$W/tm" > "$W/tm.txt"
-cat "$W/tm.txt"
-grep -q '^   1.000  Otevřít soubor' "$W/tm.txt" && grep -q '^export 7$' "$W/tm.txt" && grep -q '^after reset 0$' "$W/tm.txt" \
-    && ! grep -A1 '^Q: Temp after rollback' "$W/tm.txt" | grep -q 'Dočasné' || { echo "translation memory: unexpected results"; exit 1; }
-echo "translation memory: ok"

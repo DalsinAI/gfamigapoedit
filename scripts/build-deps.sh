@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds what Poedit needs besides wx into one sysroot: the shared
 # GFOpenBoost SDK's headers and libraries, nlohmann json,
-# our OXP parser, SQLite, and the stubs that send ICU's calls to our
+# our OXP parser, transmem.library's SDK, and the stubs that send ICU's calls to our
 # unicode.library.
 #   TOOLCHAIN=.../prefix WORK=build scripts/build-deps.sh
 # Copyright (c) 2026 AmiCradle Team
@@ -68,23 +68,19 @@ if ! stamp oxp "$OXP_COMMIT"; then
 fi
 echo "stage oxp: $(ls -l "$SYS/lib/liboxp.a" | awk '{print $5}') bytes"
 
-# SQLite, for the translation memory (src/tm): the copy Audacity keeps, as
-# GFAmigaAudacity builds it, with our Amiga changes (patches/sqlite-amiga.patch)
-if ! stamp sqlite "$SQLITE_C_SHA256-$(sha256sum "$HERE/patches/sqlite-amiga.patch" | cut -c1-16)"; then
-    fetch "$SQLITE_URL/sqlite3.c" "$SQLITE_C_SHA256" sqlite3.c
-    fetch "$SQLITE_URL/sqlite3.h" "$SQLITE_H_SHA256" sqlite3.h
-    Q="$WORK/sqlite"; rm -rf "$Q" "$WORK/obj/sqlite"; mkdir -p "$Q"
-    cp "$D/sqlite3.c" "$D/sqlite3.h" "$Q/"
-    (cd "$Q" && patch -p1 -s < "$HERE/patches/sqlite-amiga.patch")
-    cc_many "$WORK/obj/sqlite" "$Q" "-DSQLITE_DQS=0 -DSQLITE_DEFAULT_MEMSTATUS=0 -DSQLITE_DEFAULT_SYNCHRONOUS=1 \
-        -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_MAX_EXPR_DEPTH=0 -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_SHARED_CACHE \
-        -DSQLITE_USE_ALLOCA -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_WAL -DSQLITE_MAX_MMAP_SIZE=0 -DSQLITE_TEMP_STORE=3 \
-        -DSQLITE_THREADSAFE=1 -DHAVE_USLEEP=1" sqlite3.c
-    cp "$Q/sqlite3.h" "$SYS/include/"
-    rm -f "$SYS/lib/libsqlite3.a"; m68k-amigaos-ar rcs "$SYS/lib/libsqlite3.a" "$WORK/obj/sqlite"/*.o
-    echo "$SQLITE_C_SHA256-$(sha256sum "$HERE/patches/sqlite-amiga.patch" | cut -c1-16)" > "$WORK/.stamp-sqlite"
+# transmem.library's SDK (GFOpenTransMem), for the translation memory:
+# its headers and the stub library that opens it
+if ! stamp transmem "$TRANSMEM_SHA256"; then
+    fetch "$TRANSMEM_URL" "$TRANSMEM_SHA256" gfopentransmem.zip
+    rm -rf "$WORK/gfopentransmem"; mkdir -p "$WORK/gfopentransmem"
+    python3 -I -m zipfile -e "$D/gfopentransmem.zip" "$WORK/gfopentransmem"
+    T=$(dirname "$(find "$WORK/gfopentransmem" -path '*/SDK/Lib/libtransmem.a' | head -1)")/..
+    [ -f "$T/Lib/libtransmem.a" ] || { echo "transmem: no SDK in $TRANSMEM_URL"; exit 1; }
+    for d in proto libraries clib inline; do mkdir -p "$SYS/include/$d"; cp "$T/Include/$d/transmem"*.h "$SYS/include/$d/"; done
+    cp "$T/Lib/libtransmem.a" "$SYS/lib/"
+    echo "$TRANSMEM_SHA256" > "$WORK/.stamp-transmem"
 fi
-echo "stage sqlite: $(ls -l "$SYS/lib/libsqlite3.a" | awk '{print $5}') bytes"
+echo "stage transmem: $(ls -l "$SYS/lib/libtransmem.a" | awk '{print $5}') bytes of stubs"
 
 # ICU's calls go to our unicode.library (GFOpenBrowser src/unicodelib):
 # ICU's headers (from its release, headers only) and the library's stubs

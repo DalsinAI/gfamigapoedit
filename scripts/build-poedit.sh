@@ -34,7 +34,7 @@ if [ "$(cat "$S/.rev" 2>/dev/null)" != "$REV" ]; then
     # a patched file is newer than its object, so cc_many builds it again
     echo "$REV" > "$S/.rev"
 fi
-for f in tm/transmem.cpp pugi/pugixml.hpp pugi/pugixml.cpp amiga/posix-compat.c; do
+for f in tm/transmem.cpp pugi/pugixml.hpp pugi/pugixml.cpp; do
     mkdir -p "$S/$(dirname "$f")"
     cmp -s "$HERE/src/$f" "$S/$f" || cp "$HERE/src/$f" "$S/$f"
 done
@@ -44,7 +44,7 @@ cmp -s "$S/compiled_xrc.cpp.new" "$S/compiled_xrc.cpp" && rm "$S/compiled_xrc.cp
 # poedit_SOURCES from Poedit's src/Makefile.am, without the cloud accounts
 SRCS=$(sed -n '/^poedit_SOURCES = /,/^[^ ]/p' "$S/Makefile.am" | tr ' \t\\' '\n\n\n' | grep '\.cpp$')
 [ -n "$SRCS" ] || { echo "no sources in $S/Makefile.am"; exit 1; }
-SRCS="$SRCS compiled_xrc.cpp pugi/pugixml.cpp amiga/posix-compat.c"
+SRCS="$SRCS compiled_xrc.cpp pugi/pugixml.cpp"
 echo "stage poedit sources: $(echo $SRCS | wc -w)"
 
 # shellcheck disable=SC2046
@@ -62,7 +62,7 @@ O="$WORK/obj/poedit"
 mkdir -p "$OUT"
 # shellcheck disable=SC2046
 m68k-amigaos-g++ -noixemul -m68040 -specs="$SPECS" -o "$OUT/Poedit.debug" "$O"/*.o \
-    -L"$SYS/lib" -loxp -lsqlite3 -licuuc -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_date_time -lboost_chrono -lboost_atomic \
+    -L"$SYS/lib" -loxp -ltransmem -licuuc -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_date_time -lboost_chrono -lboost_atomic \
     $("$WXC" --libs core,base,adv,html,xml,xrc,aui,net) -lpthread -latomic -lm \
     -Wl,-Map,"$WORK/poedit.map" > "$WORK/poedit.link.log" 2>&1 \
     || { echo "link failed: $(grep -c . "$WORK/poedit.link.log") log lines"

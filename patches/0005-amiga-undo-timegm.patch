@@ -1,4 +1,4 @@
-AmigaOS: no undo grouping in the text control, and our own timegm for TMX dates.
+AmigaOS: no undo grouping in the text control, our own timegm for TMX dates, and the temp folder made the portable way.
 
 diff -ru a/src/text_control.cpp b/src/text_control.cpp
 --- a/src/text_control.cpp	2026-11-06 16:07:50.547019813 +0000
@@ -57,3 +57,15 @@ diff -ru a/src/tm/tmx_io.cpp b/src/tm/tmx_io.cpp
                  }
  
                  writer.Insert(srclang, lang, source, trans, creationTime);
+diff -ru a/src/utility.cpp b/src/utility.cpp
+--- a/src/utility.cpp	2026-11-06 19:43:50.501649773 +0000
++++ b/src/utility.cpp	2026-11-06 19:43:50.510222656 +0000
+@@ -134,7 +134,7 @@
+ 
+ TempDirectory::TempDirectory()
+ {
+-#ifdef __UNIX__
++#if defined(__UNIX__) && !defined(__AMIGA__) // AmigaOS: libnix's mkdtemp clashes with the toolkit's mkstemp
+     wxString path = wxFileName::GetTempDir();
+     path += "/poeditXXXXXX";
+     wxCharBuffer buf(path.fn_str());

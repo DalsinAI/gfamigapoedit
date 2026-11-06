@@ -63,7 +63,7 @@ mkdir -p "$OUT"
 # shellcheck disable=SC2046
 m68k-amigaos-g++ -noixemul -m68040 -specs="$SPECS" -o "$OUT/Poedit.debug" "$O"/*.o \
     -L"$SYS/lib" -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_date_time -lboost_chrono -lboost_atomic -loxp -lsqlite3 -licuuc \
-    $("$WXC" --libs core,base,adv,html,xml,xrc,aui,net) -lz -lpthread -latomic -lm \
+    $("$WXC" --libs core,base,adv,html,xml,xrc,aui,net) -lpthread -latomic -lm \
     -Wl,-Map,"$WORK/poedit.map" > "$WORK/poedit.link.log" 2>&1 \
     || { echo "link failed: $(grep -c . "$WORK/poedit.link.log") log lines"
          grep -v 'duplicate section' "$WORK/poedit.link.log" | grep -E "undefined reference|error|cannot find|No such" | sed 's/.*undefined reference to/undefined:/' | sort | uniq -c | sort -rn | head -60 | sed 's/^/ERR /'

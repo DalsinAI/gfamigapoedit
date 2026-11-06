@@ -18,9 +18,17 @@ CF="-noixemul -m68040 -O2 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
 
 # Poedit's sources, with ours laid over them: when an overlay changes, cp
 # gives it a new time and cc_many builds it again
+# and our patches (patches/NNNN-*.patch, paths a/src/...) on a fresh copy
 S="$WORK/poedit-src"
-if [ "$(cat "$S/.rev" 2>/dev/null)" != "$POEDIT_COMMIT" ]; then
-    rm -rf "$S" "$WORK/obj/poedit"; cp -R "$POE/src" "$S"; echo "$POEDIT_COMMIT" > "$S/.rev"
+REV="$POEDIT_COMMIT-$(cat "$HERE"/patches/[0-9]*.patch 2>/dev/null | sha256sum | cut -c1-16)"
+if [ "$(cat "$S/.rev" 2>/dev/null)" != "$REV" ]; then
+    rm -rf "$S"; cp -Rp "$POE/src" "$S"
+    for p in "$HERE"/patches/[0-9]*.patch; do
+        [ -f "$p" ] || continue
+        (cd "$S" && patch -p2 -s --no-backup-if-mismatch < "$p") || { echo "FAIL patch $(basename "$p")"; exit 1; }
+    done
+    # a patched file is newer than its object, so cc_many builds it again
+    echo "$REV" > "$S/.rev"
 fi
 for f in tm/transmem.cpp pugi/pugixml.hpp pugi/pugixml.cpp; do
     mkdir -p "$S/$(dirname "$f")"

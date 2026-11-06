@@ -1,0 +1,92 @@
+AmigaOS: the code viewer on wx's HTML window, as the toolkit has no web engine.
+
+diff -ru a/src/fileviewer.cpp b/src/fileviewer.cpp
+--- a/src/fileviewer.cpp	2026-11-06 06:56:12.209402799 +0000
++++ b/src/fileviewer.cpp	2026-11-06 06:56:12.226449346 +0000
+@@ -42,7 +42,11 @@
+ #include <wx/ffile.h>
+ #include <wx/stdpaths.h>
+ #include <wx/utils.h>
++#ifdef __WXOPENLAYOUT__
++#include <wx/html/htmlwin.h>
++#else
+ #include <wx/webview.h>
++#endif
+ 
+ #ifdef __WXMSW__
+ #include <wx/msw/webview_ie.h>
+@@ -149,6 +153,10 @@
+         wxWebViewIE::MSWSetEmulationLevel(wxWEBVIEWIE_EMU_IE11);
+         m_content = wxWebView::New(panel, wxID_ANY);
+     }
++#elif defined(__WXOPENLAYOUT__)
++    // AmigaOS: no web engine in the toolkit; wx's own HTML window shows the
++    // file (without PrismJS's colours)
++    m_content = new wxHtmlWindow(panel, wxID_ANY);
+ #else
+     m_content = wxWebView::New(panel, wxID_ANY);
+ #endif
+@@ -353,7 +361,12 @@
+     else
+ #endif
+     {
++#ifdef __WXOPENLAYOUT__
++        m_content->SetPage(markup);
++        m_content->ScrollToAnchor("mark");
++#else
+         m_content->SetPage(markup, "file:///");
++#endif
+     }
+ }
+ 
+@@ -437,6 +450,23 @@
+ 
+ wxString FileToHTMLMarkup(const wxTextFile& file, const wxString& ext, size_t lineno)
+ {
++#ifdef __WXOPENLAYOUT__
++    // wx's HTML window: no CSS or scripts; numbered lines, the one asked
++    // for in bold on a highlight, and an anchor to scroll to
++    (void)ext;
++    wxString page = "<html><body><table width=\"100%\" cellspacing=\"0\" cellpadding=\"0\"><tr><td><pre>";
++    const size_t lines = file.GetLineCount();
++    for (size_t i = 0; i < lines; i++)
++    {
++        wxString num = wxString::Format("%5zu  ", i + 1);
++        if (i + 1 == lineno)
++            page += "</pre></td></tr><tr><td bgcolor=\"#fff3a0\"><a name=\"mark\"></a><pre><b>" + num + EscapeMarkup(file[i]) + "</b></pre></td></tr><tr><td><pre>";
++        else
++            page += num + EscapeMarkup(file[i]) + "\n";
++    }
++    page += "</pre></td></tr></table></body></html>";
++    return page;
++#endif
+     wxString html = wxString::Format(
+         R"(<!DOCTYPE html>
+         <html>
+diff -ru a/src/fileviewer.h b/src/fileviewer.h
+--- a/src/fileviewer.h	2026-11-06 06:56:12.209438374 +0000
++++ b/src/fileviewer.h	2026-11-06 06:56:12.225277958 +0000
+@@ -36,7 +36,11 @@
+ class WXDLLIMPEXP_FWD_CORE wxChoice;
+ class WXDLLIMPEXP_FWD_CORE wxStaticText;
+ class WXDLLIMPEXP_FWD_CORE wxFileName;
++#ifdef __WXOPENLAYOUT__
++class WXDLLIMPEXP_FWD_HTML wxHtmlWindow;
++#else
+ class WXDLLIMPEXP_FWD_CORE wxWebView;
++#endif
+ class WXDLLIMPEXP_FWD_CORE wxSizer;
+ 
+ 
+@@ -70,7 +74,11 @@
+     wxChoice *m_file;
+     wxStaticText *m_description;
+     wxButton *m_openInEditor;
++#ifdef __WXOPENLAYOUT__
++    wxHtmlWindow *m_content;
++#else
+     wxWebView *m_content;
++#endif
+     wxSizer *m_topBarSizer;
+ 
+     void OnChoice(wxCommandEvent &event);

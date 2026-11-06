@@ -46,7 +46,10 @@ echo "stage poedit sources: $(echo $SRCS | wc -w)"
 # shellcheck disable=SC2046
 FL="-std=gnu++17 $("$WXC" --cxxflags) -I$S -I$S/pugi -I$SYS/include \
     -DHAVE_PUGIXML -DwxNO_UNSAFE_WXSTRING_CONV=1 -DPOEDIT_PREFIX=\"PROGDIR:\" \
-    -DBOOST_ALL_NO_LIB -DBOOST_THREAD_POSIX -DBOOST_THREAD_VERSION=4 -Wno-deprecated-declarations"
+    -DBOOST_ALL_NO_LIB -DBOOST_THREAD_POSIX -DBOOST_THREAD_VERSION=4 -DBOOST_THREAD_PROVIDES_EXECUTORS -Wno-deprecated-declarations"
+# new flags or a new toolkit SDK: every object again
+FH=$(printf '%s %s' "$FL" "$CF" | sha256sum | cut -c1-16)
+[ "$(cat "$WORK/obj/poedit/.flags" 2>/dev/null)" = "$FH" ] || { rm -rf "$WORK/obj/poedit"; mkdir -p "$WORK/obj/poedit"; echo "$FH" > "$WORK/obj/poedit/.flags"; }
 # shellcheck disable=SC2086
 cc_many "$WORK/obj/poedit" "$S" "$FL" $SRCS
 

@@ -10,6 +10,7 @@
 # Copyright (c) 2026 AmiCradle Team
 set -eu
 # Daletop runs Dale's instances too: the build is niced and runs 4 jobs
+# (the toolkit 12, as its own build does: its files are small)
 renice -n 19 $$ >/dev/null 2>&1 || true
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$HERE/poedit.lock"
@@ -44,7 +45,7 @@ if [ ! -x "$WXB/out/sdk/bin/wx-config" ] || [ "$(cat "$WXB/out/.rev" 2>/dev/null
     # stopped before the job's cap so the log comes back; make goes on
     # from its objects next run
     rc=0
-    STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=$JOBS timeout $(( $(left) - 20 )) sh "$WORK/deps/gfopenwxtoolkit/build-amiga.sh" > "$WORK.wx.log" 2>&1 || rc=$?
+    STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=${WX_JOBS:-12} timeout $(( $(left) - 20 )) sh "$WORK/deps/gfopenwxtoolkit/build-amiga.sh" > "$WORK.wx.log" 2>&1 || rc=$?
     if [ "$rc" = 124 ]; then
         echo "toolkit: stopped at the time cap, $(ls "$WXB/gui/obj"/*.o 2>/dev/null | wc -l) GUI objects so far; goes on next run"
         grep -v '^m68k-amigaos-g\|warning\|^ \|^In file\|duplicate section' "$WORK.wx.log" | tail -12 | cut -c1-300

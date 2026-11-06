@@ -26,7 +26,7 @@ cc_many() {
             n=$((n+1))
             if [ "$n" -eq 1 ]; then echo "FAIL $f"; head -40 "$o.err" | sed 's/^ *//; s/^/ERR /'
             # the first errors of a few more files, so one run shows more
-            elif [ "$n" -le 10 ]; then grep -m 4 'error' "$o.err" | cut -c1-300 | sed 's/^ *//; s/^/ERR /'; fi
+            elif [ "$n" -le 20 ] && ! grep -q "prefsdlg.h:34" "$o.err"; then grep -m 4 'error' "$o.err" | cut -c1-300 | sed 's/^ *//; s/^/ERR /'; fi
             echo "FAIL $f"
         fi
     done

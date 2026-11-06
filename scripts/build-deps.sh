@@ -31,7 +31,9 @@ gitpin() { # url commit dir
         [ "$(git -C "$3" rev-parse HEAD)" = "$2" ] || { echo "commit mismatch: $1"; exit 1; }
     fi
 }
-# cc_many OBJDIR SRCROOT "FLAGS" FILE...: compiles in parallel; on failure
+# cc_many OBJDIR SRCROOT "FLAGS" FILE...: compiles in parallel, each
+# compiler capped at CC_MEM_KB of memory (a runaway one fails on its own
+# instead of taking Daletop's job runner with it); on failure
 # shows the first failing file's errors in full and stops
 cc_many() {
     od=$1; root=$2; fl=$3; shift 3
@@ -40,7 +42,7 @@ cc_many() {
         o="$od/$(echo "$f" | tr / _ | sed 's/\.c[p]*$/.o/')"
         [ -f "$o" ] && [ "$o" -nt "$root/$f" ] && continue
         case "$f" in *.c) c=m68k-amigaos-gcc; std="-std=gnu99"; inc="" ;; *) c=m68k-amigaos-g++; std=""; inc="-include $HERE/scripts/amiga-nocancel.h" ;; esac
-        ( $c $CF $std $inc $fl -c "$root/$f" -o "$o.part" 2> "$o.err" && mv "$o.part" "$o" ) &
+        ( ulimit -v ${CC_MEM_KB:-2500000}; $c $CF $std $inc $fl -c "$root/$f" -o "$o.part" 2> "$o.err" && mv "$o.part" "$o" ) &
         while [ "$(jobs -p | wc -l)" -ge "$JOBS" ]; do sleep 1; done
     done
     wait

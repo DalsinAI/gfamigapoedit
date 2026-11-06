@@ -1,0 +1,40 @@
+AmigaOS (OpenLayout toolkit): the welcome screen's action buttons as plain buttons, and no spellchecker yet.
+
+diff -ru a/src/custom_buttons.cpp b/src/custom_buttons.cpp
+--- a/src/custom_buttons.cpp	2026-11-06 19:48:02.588872057 +0000
++++ b/src/custom_buttons.cpp	2026-11-06 19:48:02.630669137 +0000
+@@ -431,6 +431,16 @@
+ }
+ #endif // __WXGTK__
+ 
++#ifdef __WXOPENLAYOUT__
++// AmigaOS: a plain button with the title; the note goes in its tooltip
++ActionButton::ActionButton(wxWindow *parent, wxWindowID winid, const wxString& /*symbolicName*/, const wxString& label, const wxString& note)
++    : wxButton(parent, winid, label, wxDefaultPosition, wxDefaultSize, wxBU_LEFT)
++{
++    SetToolTip(note);
++    Bind(wxEVT_BUTTON, &ActionButton::OnPressed, this);
++}
++#endif // __WXOPENLAYOUT__
++
+ #ifdef __WXMSW__
+ ActionButton::ActionButton(wxWindow *parent, wxWindowID winid, const wxString& symbolicName, const wxString& label, const wxString& note) 
+     : wxCommandLinkButton(parent, winid, label, note, wxDefaultPosition, wxSize(-1, PX(48)))
+diff -ru a/src/spellchecking.cpp b/src/spellchecking.cpp
+--- a/src/spellchecking.cpp	2026-11-06 19:48:02.591550445 +0000
++++ b/src/spellchecking.cpp	2026-11-06 19:48:02.630780576 +0000
+@@ -161,6 +161,14 @@
+ }
+ #endif // __WXOSX__
+ 
++#ifdef __WXOPENLAYOUT__
++// AmigaOS: no spellchecker in the toolkit's text control yet
++bool InitTextCtrlSpellchecker(CustomizedTextCtrl* /*text*/, bool /*enable*/, const Language& /*lang*/)
++{
++    return false;
++}
++#endif // __WXOPENLAYOUT__
++
+ #ifdef __WXMSW__
+ void PrepareTextCtrlForSpellchecker(CustomizedTextCtrl *text)
+ {

@@ -27,7 +27,7 @@ ICU_URL=https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-
 ICU_SHA256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
 UL_REPO=https://github.com/DalsinAI/gfopenbrowser
 # gfopenbrowser PR #187's branch (the 16 calls Poedit adds) until it merges
-UL_COMMIT=da184e76ff1a21db3c7c8bd5e80d0155f13694a2
+UL_COMMIT=67b6e5dcdf9f1874c6715b638d78b1c68a0e14a6
 # A lab SDK already built at the toolkit's commit (a job's
 # gfopenwx-sdk.tar.gz) in place of building the toolkit here; empty: build it
 WXT_SDK_JOB=j20261106T184431-30f18d

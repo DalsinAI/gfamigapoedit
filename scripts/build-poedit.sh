@@ -34,7 +34,7 @@ if [ "$(cat "$S/.rev" 2>/dev/null)" != "$REV" ]; then
     # a patched file is newer than its object, so cc_many builds it again
     echo "$REV" > "$S/.rev"
 fi
-for f in tm/transmem.cpp pugi/pugixml.hpp pugi/pugixml.cpp; do
+for f in tm/transmem.cpp pugi/pugixml.hpp pugi/pugixml.cpp amiga/posix-compat.c; do
     mkdir -p "$S/$(dirname "$f")"
     cmp -s "$HERE/src/$f" "$S/$f" || cp "$HERE/src/$f" "$S/$f"
 done
@@ -44,7 +44,7 @@ cmp -s "$S/compiled_xrc.cpp.new" "$S/compiled_xrc.cpp" && rm "$S/compiled_xrc.cp
 # poedit_SOURCES from Poedit's src/Makefile.am, without the cloud accounts
 SRCS=$(sed -n '/^poedit_SOURCES = /,/^[^ ]/p' "$S/Makefile.am" | tr ' \t\\' '\n\n\n' | grep '\.cpp$')
 [ -n "$SRCS" ] || { echo "no sources in $S/Makefile.am"; exit 1; }
-SRCS="$SRCS compiled_xrc.cpp pugi/pugixml.cpp"
+SRCS="$SRCS compiled_xrc.cpp pugi/pugixml.cpp amiga/posix-compat.c"
 echo "stage poedit sources: $(echo $SRCS | wc -w)"
 
 # shellcheck disable=SC2046

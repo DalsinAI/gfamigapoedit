@@ -40,9 +40,17 @@ echo "libraries: $(( $(date +%s) - t0 )) s"
 fetch gfopenwxtoolkit "$WXT_REPO" "$WXT_COMMIT"
 WXB="$WORK/gfopenwx"
 if [ ! -x "$WXB/out/sdk/bin/wx-config" ] || [ "$(cat "$WXB/out/.rev" 2>/dev/null)" != "$WXT_COMMIT" ]; then
-    [ "$(left)" -gt 600 ] || { echo "toolkit next run ($(left) s left)"; exit 0; }
-    STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=$JOBS sh "$WORK/deps/gfopenwxtoolkit/build-amiga.sh" > "$WORK.wx.log" 2>&1 \
-        || { tail -30 "$WORK.wx.log"; exit 1; }
+    [ "$(left)" -gt 300 ] || { echo "toolkit next run ($(left) s left)"; exit 0; }
+    # stopped before the job's cap so the log comes back; make goes on
+    # from its objects next run
+    rc=0
+    STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=$JOBS timeout $(( $(left) - 20 )) sh "$WORK/deps/gfopenwxtoolkit/build-amiga.sh" > "$WORK.wx.log" 2>&1 || rc=$?
+    if [ "$rc" = 124 ]; then
+        echo "toolkit: stopped at the time cap, $(ls "$WXB/gui/obj"/*.o 2>/dev/null | wc -l) GUI objects so far; goes on next run"
+        grep -v '^m68k-amigaos-g\|warning\|^ \|^In file' "$WORK.wx.log" | tail -12 | cut -c1-300
+        exit 0
+    fi
+    [ "$rc" = 0 ] || { tail -30 "$WORK.wx.log" | cut -c1-400; exit 1; }
     [ -x "$WXB/out/sdk/bin/wx-config" ] && echo "$WXT_COMMIT" > "$WXB/out/.rev"
     echo "toolkit: $(( $(date +%s) - t0 )) s"
 fi

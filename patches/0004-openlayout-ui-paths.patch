@@ -14,7 +14,7 @@ diff -ru a/src/manager.cpp b/src/manager.cpp
      int editButtonStyle = wxBU_EXACTFIT | wxBORDER_NONE;
 diff -ru a/src/prefsdlg.cpp b/src/prefsdlg.cpp
 --- a/src/prefsdlg.cpp	2026-11-06 15:40:24.519672849 +0000
-+++ b/src/prefsdlg.cpp	2026-11-06 15:40:31.940945592 +0000
++++ b/src/prefsdlg.cpp	2026-11-06 19:31:57.307873971 +0000
 @@ -291,6 +291,9 @@
              #define DEFAULT_FONT "Arial"
          #elif defined(__WXGTK__)
@@ -25,6 +25,15 @@ diff -ru a/src/prefsdlg.cpp b/src/prefsdlg.cpp
          #endif
          auto listFont = wxFont(cfg.Read("custom_font_list_name", ""));
          if (!listFont.IsOk())
+@@ -757,7 +760,7 @@
+         m_new = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-add"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+         m_delete = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-remove"), wxDefaultPosition, wxSize(PX(19),PX(19)));
+         int editButtonStyle = wxBU_EXACTFIT;
+-#elif defined(__WXGTK__)
++#elif defined(__WXGTK__) || defined(__WXOPENLAYOUT__)
+         m_new = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-add@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+         m_delete = new wxBitmapButton(this, wxID_ANY, wxArtProvider::GetBitmap("list-remove@symbolic"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+         int editButtonStyle = wxBU_EXACTFIT | wxBORDER_NONE;
 diff -ru a/src/progress_ui.h b/src/progress_ui.h
 --- a/src/progress_ui.h	2026-11-06 15:40:24.508179538 +0000
 +++ b/src/progress_ui.h	2026-11-06 15:40:24.537061205 +0000

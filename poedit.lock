@@ -30,5 +30,5 @@ UL_REPO=https://github.com/DalsinAI/gfopenbrowser
 UL_COMMIT=da184e76ff1a21db3c7c8bd5e80d0155f13694a2
 # A lab SDK already built at the toolkit's commit (a job's
 # gfopenwx-sdk.tar.gz) in place of building the toolkit here; empty: build it
-WXT_SDK_JOB=
-WXT_SDK_SHA256=
+WXT_SDK_JOB=j20261106T134404-c36718
+WXT_SDK_SHA256=68948c6f6941a69335c3116bd5efb490fbd2523c56991586ce9e742585cc68c9

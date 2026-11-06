@@ -2,7 +2,7 @@ AmigaOS: no single-instance IPC (the toolkit's base has no wxIPC) and no file sy
 
 diff -ru a/src/edapp.cpp b/src/edapp.cpp
 --- a/src/edapp.cpp	2026-11-06 15:23:47.644445215 +0000
-+++ b/src/edapp.cpp	2026-11-06 15:23:47.664371429 +0000
++++ b/src/edapp.cpp	2026-11-06 15:40:16.626631249 +0000
 @@ -109,7 +109,7 @@
  #include "welcomescreen.h"
  
@@ -12,6 +12,15 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
  
  // IPC for ensuring that only one instance of Poedit runs at a time. This is
  // handled native on macOS and GtkApplication could do it under GTK+3, but wx
+@@ -344,7 +344,7 @@
+     SetVendorName("Vaclav Slavik");
+     SetAppName("Poedit");
+ 
+-#ifndef __WXOSX__
++#if !defined(__WXOSX__) && wxUSE_IPC
+     // create early for use in cmd line parsing
+     m_instanceChecker.reset(new wxSingleInstanceChecker);
+   #ifdef __UNIX__
 @@ -366,7 +366,7 @@
      wxSetWorkingDirectory(wxGetHomeDir());
  #endif
@@ -21,6 +30,15 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
      m_remoteServer.reset(new RemoteServer(this));
  #endif
  
+@@ -504,7 +504,7 @@
+ 
+ int PoeditApp::OnExit()
+ {
+-#ifndef __WXOSX__
++#if !defined(__WXOSX__) && wxUSE_IPC
+     m_instanceChecker.reset();
+     m_remoteServer.reset();
+ #endif
 @@ -827,7 +827,7 @@
      if ( parser.Found(CL_KEEP_TEMP_FILES) )
          TempDirectory::KeepFiles();
@@ -30,6 +48,18 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
      RemoteClient client(m_instanceChecker.get());
      switch (client.ConnectIfNeeded())
      {
+diff -ru a/src/edapp.h b/src/edapp.h
+--- a/src/edapp.h	2026-11-06 15:40:04.631134619 +0000
++++ b/src/edapp.h	2026-11-06 15:40:16.627181924 +0000
+@@ -142,7 +142,7 @@
+         std::unique_ptr<PoeditPreferencesEditor> m_preferences;
+         std::unique_ptr<wxLocale> m_locale;
+ 
+-#ifndef __WXOSX__
++#if !defined(__WXOSX__) && wxUSE_IPC
+         class RemoteServer;
+         class RemoteClient;
+         std::unique_ptr<RemoteServer> m_remoteServer;
 diff -ru a/src/filemonitor.cpp b/src/filemonitor.cpp
 --- a/src/filemonitor.cpp	2026-11-06 15:23:47.648121892 +0000
 +++ b/src/filemonitor.cpp	2026-11-06 15:23:47.665093067 +0000

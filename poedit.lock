@@ -2,27 +2,29 @@
 POEDIT_GIT=https://github.com/vslavik/poedit.git
 POEDIT_TAG=v3.10-oss
 POEDIT_COMMIT=2ed0c77cb5bc57f622f5f9d07faec5d0882a1226
-# Poedit's own pins of the libraries it builds with (its deps/ submodules)
-BOOST_GIT=https://github.com/poedit/boost-subset.git
-BOOST_COMMIT=3a682b6ac028d0892c778c6191a1da023099a346
-LUCENE_GIT=https://github.com/poedit/LucenePlusPlus.git
-LUCENE_COMMIT=308cfb23e15544c627db2d68978d64457f9070aa
+# Poedit's own pin of nlohmann json (its deps/ submodule)
 JSON_GIT=https://github.com/nlohmann/json.git
 JSON_COMMIT=55f93686c01528224f448c19128836e7df245f72
-PUGIXML_GIT=https://github.com/zeux/pugixml.git
-PUGIXML_COMMIT=ee86beb30e4973f5feffe3ce63bfa4fbadf72f38
 # Our own pieces, fetched at these commits
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
-WXT_COMMIT=e75e16f8278a2c93a23d4ba0fbf2b098c59c0ec4
-# Boost (Poedit's Linux build uses Boost.Thread futures and executors;
-# Lucene++ uses filesystem, iostreams, thread, date_time)
+# (team3/poedit-toolkit-20261106: main with the font picker and activity indicator)
+WXT_COMMIT=340e3e5848a1928b6a429677ad120ca5ba447517
+OXP_REPO=https://github.com/DalsinAI/gfopenxml
+OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
+# SQLite 3.35.5 for the translation memory: the copy Audacity 3.7.9 keeps
+# (lib-src/sqlite), as GFAmigaAudacity builds it
+SQLITE_URL=https://raw.githubusercontent.com/audacity/audacity/86d74c770974b25188ca2f23bcce47c1181bd08a/lib-src/sqlite
+SQLITE_C_SHA256=ae3f047cbf30795f0b3cd20f035cd083be075142e69a9c081777ce2aa98c1d0d
+SQLITE_H_SHA256=0809b65babc4176fc31c4732c66cd1be6f35c86cb08902f707381e29ef259844
+# Boost (Poedit's Linux build uses Boost.Thread futures and executors)
 BOOST_VERSION=1.89.0
 BOOST_URL=https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-b2-nodocs.tar.xz
 BOOST_SHA256=875cc413afa6b86922b6df3b2ad23dec4511c8a741753e57c1129e7fa753d700
-# ICU (Poedit's language names, plural forms and text handling), built the
-# way GFOpenBrowser builds it, with its AmigaOS patch from this commit
+# ICU's headers only: Poedit calls ICU's C functions, and they go to our
+# unicode.library (GFOpenBrowser src/unicodelib, at UL_COMMIT) through its stubs
 ICU_VERSION=78.3
 ICU_URL=https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz
 ICU_SHA256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
-OB_REPO=https://github.com/DalsinAI/gfopenbrowser
-OB_COMMIT=f3f41ce595fecb3d817bb5b30aa9b3371e7c4f31
+UL_REPO=https://github.com/DalsinAI/gfopenbrowser
+# gfopenbrowser PR #187's branch (the 16 calls Poedit adds) until it merges
+UL_COMMIT=da184e76ff1a21db3c7c8bd5e80d0155f13694a2

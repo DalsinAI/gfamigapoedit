@@ -36,15 +36,6 @@ TOOLCHAIN="$TC" WORK="$WORK" JOBS=$JOBS sh "$HERE/scripts/build-deps.sh" > "$WOR
 grep "^stage " "$WORK.deps.log" || true
 echo "libraries: $(( $(date +%s) - t0 )) s"
 
-# ICU (a host build for its tools, then the cross build)
-if [ "$(cat "$WORK/.stamp-icu" 2>/dev/null)" != "$ICU_SHA256-$OB_COMMIT" ]; then
-    [ "$(left)" -gt 420 ] || { echo "ICU next run ($(left) s left)"; exit 0; }
-    TOOLCHAIN="$TC" WORK="$WORK" JOBS=$JOBS sh "$HERE/scripts/build-icu.sh" > "$WORK.icu.log" 2>&1 \
-        || { cut -c1-300 "$WORK.icu.log" | tail -40; exit 1; }
-    grep '^stage ' "$WORK.icu.log" || true
-    echo "ICU: $(( $(date +%s) - t0 )) s"
-fi
-
 # the toolkit SDK, again only when its pinned commit changes
 fetch gfopenwxtoolkit "$WXT_REPO" "$WXT_COMMIT"
 WXB="$WORK/gfopenwx"
@@ -56,6 +47,17 @@ if [ ! -x "$WXB/out/sdk/bin/wx-config" ] || [ "$(cat "$WXB/out/.rev" 2>/dev/null
     echo "toolkit: $(( $(date +%s) - t0 )) s"
 fi
 [ -x "$WXB/out/sdk/bin/wx-config" ] || { tail -30 "$WORK.wx.log"; echo "no toolkit SDK yet (run again)"; exit 0; }
-"$WXB/out/sdk/bin/wx-config" --libs | head -c 400; echo
-ls -l "$WORK/sysroot/lib" | tee "$OUT/libraries.txt"
+ls -l "$WORK/sysroot/lib" > "$OUT/libraries.txt"
+
+# Poedit
+[ "$(left)" -gt 120 ] || { echo "Poedit next run ($(left) s left)"; exit 0; }
+rc=0
+TOOLCHAIN="$TC" WORK="$WORK" WX="$WXB/out/sdk" OUT="$OUT" JOBS=$JOBS CC_DEADLINE=$(( t0 + ${BUDGET_TOTAL:-840} - 90 )) \
+    sh "$HERE/scripts/build-poedit.sh" > "$WORK.poedit.log" 2>&1 || rc=$?
+grep '^stage ' "$WORK.poedit.log" || true
+case $rc in
+    0) ls -l "$OUT/Poedit" ;;
+    3) echo "Poedit: $(ls "$WORK/obj/poedit"/*.o 2>/dev/null | wc -l) objects so far, goes on next run" ;;
+    *) grep '^ERR \|^FAIL \|undefined' "$WORK.poedit.log" | cut -c1-400 | head -60; tail -5 "$WORK.poedit.log" | cut -c1-300; exit 1 ;;
+esac
 echo "total: $(( $(date +%s) - t0 )) s"

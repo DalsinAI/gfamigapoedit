@@ -1,0 +1,81 @@
+AmigaOS: SQLite (the copy Audacity 3.7.9 keeps in lib-src/sqlite, 3.35.5)
+without libnix's sys/ioctl.h, whose exec/types.h GLOBAL clashes with
+SQLite's, and with seeks past the end of a file (which AmigaDOS refuses on a
+real disk) made into reads of nothing, or into growing the file with zeros
+before a write. The same changes as GFAmigaAudacity's patches 0004 and 0014.
+
+--- a/sqlite3.c	2026-11-05 00:27:20.608367871 +0000
++++ b/sqlite3.c	2026-11-05 00:27:20.676367873 +0000
+@@ -33753,7 +33753,11 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
++#if !defined(__AMIGA__)
++/* AmigaOS: libnix's sys/ioctl.h brings in exec/types.h, whose GLOBAL
++** clashes with SQLite's; nothing here needs it there */
+ #include <sys/ioctl.h>
++#endif
+ #include <unistd.h>
+ /* #include <time.h> */
+ #include <sys/time.h>
+--- a/sqlite3.c	2026-11-05 15:18:49.983553777 +0000
++++ b/sqlite3.c	2026-11-05 15:18:50.203553791 +0000
+@@ -37136,6 +37136,33 @@
+ ** are gather together into this division.
+ */
+ 
++#if defined(__AMIGA__) && !defined(USE_PREAD) && !defined(USE_PREAD64)
++/*
++** AmigaOS: AmigaDOS cannot seek past the end of a file on a real disk (a
++** host folder can, so it shows only on one such as Work:), and libnix then
++** leaves the file a few bytes long, which SQLite takes for a damaged
++** database. A read from past the end gets nothing (-2), and a write there
++** first grows the file with zeros up to the offset.
++*/
++static i64 amigaSeek(int fd, i64 iOff, int forWrite){
++  struct stat st;
++  if( osFstat(fd, &st)==0 && iOff>(i64)st.st_size ){
++    static const char zeros[4096];
++    i64 n = iOff - (i64)st.st_size;
++    if( !forWrite ) return -2;
++    if( lseek(fd, 0, SEEK_END)<0 ) return -1;
++    while( n>0 ){
++      int k = n>(i64)sizeof(zeros) ? (int)sizeof(zeros) : (int)n;
++      int w = (int)osWrite(fd, zeros, k);
++      if( w<=0 ) return -1;
++      n -= w;
++    }
++    return iOff;
++  }
++  return lseek(fd, iOff, SEEK_SET);
++}
++#endif
++
+ /*
+ ** Seek to the offset passed as the second argument, then read cnt
+ ** bytes into pBuf. Return the number of bytes actually read.
+@@ -37166,7 +37193,12 @@
+     got = osPread64(id->h, pBuf, cnt, offset);
+     SimulateIOError( got = -1 );
+ #else
++#if defined(__AMIGA__)
++    newOffset = amigaSeek(id->h, offset, 0);
++    if( newOffset==-2 ){ got = 0; break; }
++#else
+     newOffset = lseek(id->h, offset, SEEK_SET);
++#endif
+     SimulateIOError( newOffset = -1 );
+     if( newOffset<0 ){
+       storeLastErrno((unixFile*)id, errno);
+@@ -37295,7 +37327,11 @@
+   do{ rc = (int)osPwrite64(fd, pBuf, nBuf, iOff);}while( rc<0 && errno==EINTR);
+ #else
+   do{
++#if defined(__AMIGA__)
++    i64 iSeek = amigaSeek(fd, iOff, 1);
++#else
+     i64 iSeek = lseek(fd, iOff, SEEK_SET);
++#endif
+     SimulateIOError( iSeek = -1 );
+     if( iSeek<0 ){
+       rc = -1;

@@ -1,7 +1,9 @@
 #!/bin/sh
 # Builds what Poedit needs besides wx into one sysroot: Boost's compiled
 # parts (thread on pthreads, filesystem, chrono, date_time,
-# iostreams without mmap/bzip2/lzma/zstd) and its headers.
+# iostreams without mmap/bzip2/lzma/zstd) and its headers, nlohmann json,
+# our OXP parser, SQLite, and the stubs that send ICU's calls to our
+# unicode.library.
 #   TOOLCHAIN=.../prefix WORK=build scripts/build-deps.sh
 # Copyright (c) 2026 AmiCradle Team
 set -eu
@@ -31,32 +33,7 @@ gitpin() { # url commit dir
         [ "$(git -C "$3" rev-parse HEAD)" = "$2" ] || { echo "commit mismatch: $1"; exit 1; }
     fi
 }
-# cc_many OBJDIR SRCROOT "FLAGS" FILE...: compiles in parallel, each
-# compiler capped at CC_MEM_KB of memory (a runaway one fails on its own
-# instead of taking Daletop's job runner with it); on failure
-# shows the first failing file's errors in full and stops
-cc_many() {
-    od=$1; root=$2; fl=$3; shift 3
-    mkdir -p "$od"
-    for f in "$@"; do
-        o="$od/$(echo "$f" | tr / _ | sed 's/\.c[p]*$/.o/')"
-        [ -f "$o" ] && [ "$o" -nt "$root/$f" ] && continue
-        case "$f" in *.c) c=m68k-amigaos-gcc; std="-std=gnu99"; inc="" ;; *) c=m68k-amigaos-g++; std=""; inc="-include $HERE/scripts/amiga-nocancel.h" ;; esac
-        ( ulimit -v ${CC_MEM_KB:-2500000}; $c $CF $std $inc $fl -c "$root/$f" -o "$o.part" 2> "$o.err" && mv "$o.part" "$o" ) &
-        while [ "$(jobs -p | wc -l)" -ge "$JOBS" ]; do sleep 1; done
-    done
-    wait
-    n=0
-    for f in "$@"; do
-        o="$od/$(echo "$f" | tr / _ | sed 's/\.c[p]*$/.o/')"
-        if [ ! -f "$o" ]; then
-            n=$((n+1))
-            [ "$n" -gt 1 ] || { echo "FAIL $f"; head -40 "$o.err" | sed 's/^ *//; s/^/ERR /'; }
-            echo "FAIL $f"
-        fi
-    done
-    [ "$n" -eq 0 ] || { echo "$n files failed in $od"; exit 1; }
-}
+. "$HERE/scripts/cc-many.sh"
 
 # what the C++ library gives (Boost's config reads these)
 printf "#include <string>\\n#include <atomic>\\n#include <mutex>\\n" | m68k-amigaos-g++ $CXXF -dM -E -x c++ - \
@@ -123,15 +100,7 @@ if ! stamp boost "$BOOST_SHA256"; then
 fi
 echo "stage boost: $(ls -l "$SYS/lib/libboost_poedit.a" | awk '{print $5}') bytes"
 
-# pugixml and nlohmann json (Poedit's own pins)
-if ! stamp pugixml "$PUGIXML_COMMIT"; then
-    gitpin "$PUGIXML_GIT" "$PUGIXML_COMMIT" "$WORK/pugixml"
-    cc_many "$WORK/obj/pugixml" "$WORK/pugixml" "-std=gnu++17" src/pugixml.cpp
-    cp "$WORK/pugixml/src/pugixml.hpp" "$WORK/pugixml/src/pugiconfig.hpp" "$SYS/include/"
-    rm -f "$SYS/lib/libpugixml.a"; m68k-amigaos-ar rcs "$SYS/lib/libpugixml.a" "$WORK/obj/pugixml"/*.o
-    echo "$PUGIXML_COMMIT" > "$WORK/.stamp-pugixml"
-fi
-echo "stage pugixml: $(ls -l "$SYS/lib/libpugixml.a" | awk '{print $5}') bytes"
+# nlohmann json (Poedit's own pin; headers only)
 if ! stamp json "$JSON_COMMIT"; then
     gitpin "$JSON_GIT" "$JSON_COMMIT" "$WORK/json"
     rm -rf "$SYS/include/nlohmann"; cp -R "$WORK/json/single_include/nlohmann" "$SYS/include/nlohmann"
@@ -139,18 +108,54 @@ if ! stamp json "$JSON_COMMIT"; then
 fi
 echo "stage json: headers"
 
-# Lucene++ (Poedit's fork; translation memory), built from the source list
-# and Config.h Poedit's own build uses (deps/lucene)
-# (held back while finding what takes Daletop's job runner down)
-if [ "${BUILD_LUCENE:-0}" = 1 ] && ! stamp lucene "$LUCENE_COMMIT"; then
-    gitpin "$LUCENE_GIT" "$LUCENE_COMMIT" "$WORK/lucene"
-    L="$WORK/lucene"; PL="$POE/deps/lucene"
-    srcs=$(sed -n '/^  sources {/,/^  }/p' "$PL/LucenePlusPlus.bkl" | grep -E '^ +src/.*\.(cpp|c)$' | grep -v msvc | sed 's/^ *//')
-    [ -n "$srcs" ] || { echo "no Lucene++ sources in $PL/LucenePlusPlus.bkl"; exit 1; }
-    cc_many "$WORK/obj/lucene" "$L" "-std=gnu++17 -DLPP_BUILDING_LIB -I$PL -I$PL/std_replacements -I$L/include -I$L/src/core/include -I$SYS/include -I$PD/include" $srcs
-    rm -f "$SYS/lib/liblucene++.a"; m68k-amigaos-ar rcs "$SYS/lib/liblucene++.a" "$WORK/obj/lucene"/*.o
-    rm -rf "$SYS/include/lucene++"; mkdir -p "$SYS/include/lucene++"
-    cp "$L"/include/*.h "$PL/Config.h" "$SYS/include/lucene++/"
-    echo "$LUCENE_COMMIT" > "$WORK/.stamp-lucene"
+# Our own XML parser, OXP (GFOpenXML), for the pugixml layer (src/pugi)
+if ! stamp oxp "$OXP_COMMIT"; then
+    gitpin "$OXP_REPO" "$OXP_COMMIT" "$WORK/gfopenxml"
+    rm -rf "$WORK/obj/oxp"
+    cc_many "$WORK/obj/oxp" "$WORK/gfopenxml/oxp" "-I$WORK/gfopenxml/oxp/include" src/oxp.c
+    cp "$WORK/gfopenxml/oxp/include/oxp.h" "$SYS/include/"
+    rm -f "$SYS/lib/liboxp.a"; m68k-amigaos-ar rcs "$SYS/lib/liboxp.a" "$WORK/obj/oxp"/*.o
+    echo "$OXP_COMMIT" > "$WORK/.stamp-oxp"
 fi
-echo "stage lucene: $(ls -l "$SYS/lib/liblucene++.a" 2>/dev/null | awk '{print $5}') bytes"
+echo "stage oxp: $(ls -l "$SYS/lib/liboxp.a" | awk '{print $5}') bytes"
+
+# SQLite, for the translation memory (src/tm): the copy Audacity keeps, as
+# GFAmigaAudacity builds it, with our Amiga changes (patches/sqlite-amiga.patch)
+if ! stamp sqlite "$SQLITE_C_SHA256-$(sha256sum "$HERE/patches/sqlite-amiga.patch" | cut -c1-16)"; then
+    fetch "$SQLITE_URL/sqlite3.c" "$SQLITE_C_SHA256" sqlite3.c
+    fetch "$SQLITE_URL/sqlite3.h" "$SQLITE_H_SHA256" sqlite3.h
+    Q="$WORK/sqlite"; rm -rf "$Q" "$WORK/obj/sqlite"; mkdir -p "$Q"
+    cp "$D/sqlite3.c" "$D/sqlite3.h" "$Q/"
+    (cd "$Q" && patch -p1 -s < "$HERE/patches/sqlite-amiga.patch")
+    cc_many "$WORK/obj/sqlite" "$Q" "-DSQLITE_DQS=0 -DSQLITE_DEFAULT_MEMSTATUS=0 -DSQLITE_DEFAULT_SYNCHRONOUS=1 \
+        -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_MAX_EXPR_DEPTH=0 -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_SHARED_CACHE \
+        -DSQLITE_USE_ALLOCA -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_WAL -DSQLITE_MAX_MMAP_SIZE=0 -DSQLITE_TEMP_STORE=3 \
+        -DSQLITE_THREADSAFE=1 -DHAVE_USLEEP=1" sqlite3.c
+    cp "$Q/sqlite3.h" "$SYS/include/"
+    rm -f "$SYS/lib/libsqlite3.a"; m68k-amigaos-ar rcs "$SYS/lib/libsqlite3.a" "$WORK/obj/sqlite"/*.o
+    echo "$SQLITE_C_SHA256-$(sha256sum "$HERE/patches/sqlite-amiga.patch" | cut -c1-16)" > "$WORK/.stamp-sqlite"
+fi
+echo "stage sqlite: $(ls -l "$SYS/lib/libsqlite3.a" | awk '{print $5}') bytes"
+
+# ICU's calls go to our unicode.library (GFOpenBrowser src/unicodelib):
+# ICU's headers (from its release, headers only) and the library's stubs
+if ! stamp unicode "$ICU_SHA256-$UL_COMMIT"; then
+    fetch "$ICU_URL" "$ICU_SHA256" icu.tgz
+    rm -rf "$WORK/icu-h" "$SYS/include/unicode"; mkdir -p "$WORK/icu-h" "$SYS/include/unicode"
+    tar -C "$WORK/icu-h" -xzf "$D/icu.tgz" icu/source/common/unicode icu/source/i18n/unicode
+    cp "$WORK/icu-h/icu/source/common/unicode/"*.h "$WORK/icu-h/icu/source/i18n/unicode/"*.h "$SYS/include/unicode/"
+    U="$WORK/gfopenbrowser"
+    if [ "$(git -C "$U" rev-parse HEAD 2>/dev/null)" != "$UL_COMMIT" ]; then
+        rm -rf "$U"; mkdir -p "$U"; git -C "$U" init -q
+        git -C "$U" sparse-checkout set --no-cone /src/unicodelib/
+        git -C "$U" fetch -q --depth 1 --filter=blob:none "$UL_REPO" "$UL_COMMIT"; git -C "$U" checkout -q FETCH_HEAD
+    fi
+    L="$U/src/unicodelib"; G="$WORK/obj/unicode"; rm -rf "$G"; mkdir -p "$G"
+    python3 "$L/gen_calls.py" "$L/calls.txt" "$G" "$L/own.txt"
+    m68k-amigaos-gcc -m68040 -c "$G/ul_stubs.s" -o "$G/ul_stubs.o"
+    m68k-amigaos-gcc $CF -std=gnu99 -fno-common -I"$G" -I"$L" -I"$L/sdk/Include_H" -I"$SYS/include" -c "$L/ul_client.c" -o "$G/ul_client.o"
+    rm -f "$SYS/lib/libicuuc.a"; m68k-amigaos-ar rcs "$SYS/lib/libicuuc.a" "$G/ul_stubs.o" "$G/ul_client.o"
+    cp "$L/ul_client.h" "$SYS/include/"
+    echo "$ICU_SHA256-$UL_COMMIT" > "$WORK/.stamp-unicode"
+fi
+echo "stage unicode: $(ls -l "$SYS/lib/libicuuc.a" | awk '{print $5}') bytes of stubs, $(ls "$SYS/include/unicode" | wc -l) headers"

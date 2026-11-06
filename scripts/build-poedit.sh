@@ -19,6 +19,8 @@ CF="-noixemul -m68040 -O2 -fno-delete-null-pointer-checks -D_DEFAULT_SOURCE"
 # Poedit's sources, with ours laid over them: when an overlay changes, cp
 # gives it a new time and cc_many builds it again
 # and our patches (patches/NNNN-*.patch, paths a/src/...) on a fresh copy
+# the compilers' scratch files beside the build, not in the shared /tmp
+export TMPDIR="$WORK/tmp"; rm -rf "$TMPDIR"; mkdir -p "$TMPDIR"
 S="$WORK/poedit-src"
 # json.h takes nlohmann from ../deps/json, next to the src copy
 [ -e "$WORK/deps/json/single_include" ] || { mkdir -p "$WORK/deps"; ln -sfn "$WORK/json" "$WORK/deps/json"; }

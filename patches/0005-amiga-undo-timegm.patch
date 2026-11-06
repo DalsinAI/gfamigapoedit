@@ -1,0 +1,59 @@
+AmigaOS: no undo grouping in the text control, and our own timegm for TMX dates.
+
+diff -ru a/src/text_control.cpp b/src/text_control.cpp
+--- a/src/text_control.cpp	2026-11-06 16:07:50.547019813 +0000
++++ b/src/text_control.cpp	2026-11-06 16:07:50.598659597 +0000
+@@ -225,6 +225,16 @@
+     TranslationTextCtrl *m_ctrl;
+ };
+ 
++#else
++
++// no undo grouping of its own on this toolkit (AmigaOS): the text control's
++// own undo takes the edits one by one
++class UndoGroup
++{
++public:
++    UndoGroup(TranslationTextCtrl*) {}
++};
++
+ #endif
+ 
+ 
+diff -ru a/src/tm/tmx_io.cpp b/src/tm/tmx_io.cpp
+--- a/src/tm/tmx_io.cpp	2026-11-06 16:07:50.551314703 +0000
++++ b/src/tm/tmx_io.cpp	2026-11-06 16:07:50.599421320 +0000
+@@ -40,6 +40,24 @@
+ 
+ using namespace pugi;
+ 
++
++#ifdef __AMIGA__
++// the Amiga C library has no timegm: UTC broken-down time to seconds
++static time_t tmx_timegm(const struct tm *t)
++{
++    int y = t->tm_year + 1900, m = t->tm_mon + 1;
++    y -= m <= 2;
++    const long era = (y >= 0 ? y : y - 399) / 400;
++    const long yoe = y - era * 400;
++    const long doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + t->tm_mday - 1;
++    const long doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
++    const long days = era * 146097 + doe - 719468;
++    return (time_t)(days * 86400L + t->tm_hour * 3600L + t->tm_min * 60L + t->tm_sec);
++}
++#else
++#define tmx_timegm timegm
++#endif
++
+ namespace
+ {
+ 
+@@ -152,7 +170,7 @@
+                     std::istringstream s(tuvDate.c_str());
+                     s >> std::get_time(&t, "%Y%m%dT%H%M%SZ"); // YYYYMMDDThhmmssZ
+                     if (!s.fail())
+-                        creationTime = timegm(&t);
++                        creationTime = tmx_timegm(&t);
+                 }
+ 
+                 writer.Insert(srclang, lang, source, trans, creationTime);

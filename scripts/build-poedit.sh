@@ -65,6 +65,8 @@ m68k-amigaos-g++ -noixemul -m68040 -specs="$SPECS" -o "$OUT/Poedit.debug" "$O"/*
     -L"$SYS/lib" -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_date_time -lboost_chrono -lboost_atomic -loxp -lsqlite3 -licuuc \
     $("$WXC" --libs core,base,adv,html,xml,xrc,aui,net) -lz -lpthread -latomic -lm \
     -Wl,-Map,"$WORK/poedit.map" > "$WORK/poedit.link.log" 2>&1 \
-    || { grep -E "undefined reference|error" "$WORK/poedit.link.log" | sed 's/.*undefined reference to/undefined:/' | sort | uniq -c | sort -rn | head -60; exit 1; }
+    || { echo "link failed: $(grep -c . "$WORK/poedit.link.log") log lines"
+         grep -v 'duplicate section' "$WORK/poedit.link.log" | grep -E "undefined reference|error|cannot find|No such" | sed 's/.*undefined reference to/undefined:/' | sort | uniq -c | sort -rn | head -60 | sed 's/^/ERR /'
+         grep -v 'duplicate section\|: in function\|undefined reference' "$WORK/poedit.link.log" | tail -15 | cut -c1-300 | sed 's/^/ERR /'; exit 1; }
 cp "$OUT/Poedit.debug" "$OUT/Poedit"; m68k-amigaos-strip "$OUT/Poedit"
 echo "stage poedit: $(ls -l "$OUT/Poedit" | awk '{print $5}') bytes"

@@ -8,7 +8,7 @@ JSON_COMMIT=55f93686c01528224f448c19128836e7df245f72
 # Our own pieces, fetched at these commits
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
 # (team3/poedit-toolkit-20261106: main with the font picker and activity indicator)
-WXT_COMMIT=340e3e5848a1928b6a429677ad120ca5ba447517
+WXT_COMMIT=3ba79b2b208a1baec1c19ae08072e837456e292b
 OXP_REPO=https://github.com/DalsinAI/gfopenxml
 OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
 # SQLite 3.35.5 for the translation memory: the copy Audacity 3.7.9 keeps
@@ -30,5 +30,5 @@ UL_REPO=https://github.com/DalsinAI/gfopenbrowser
 UL_COMMIT=da184e76ff1a21db3c7c8bd5e80d0155f13694a2
 # A lab SDK already built at the toolkit's commit (a job's
 # gfopenwx-sdk.tar.gz) in place of building the toolkit here; empty: build it
-WXT_SDK_JOB=j20261106T134404-c36718
-WXT_SDK_SHA256=68948c6f6941a69335c3116bd5efb490fbd2523c56991586ce9e742585cc68c9
+WXT_SDK_JOB=j20261106T184431-30f18d
+WXT_SDK_SHA256=fa2d7e63d06f8bba0f5e28ac820e0594bea2f64358a76f025824733478e65e3d

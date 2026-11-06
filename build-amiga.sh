@@ -101,4 +101,5 @@ case $rc in
     3|124) poedit_progress ;;
     *) grep '^ERR \|^FAIL \|undefined' "$WORK.poedit.log" | cut -c1-400 | head -60; tail -5 "$WORK.poedit.log" | cut -c1-300; exit 1 ;;
 esac
+WORK="$WORK" OUT="$OUT" HERE="$HERE" sh "$HERE/scripts/lab-kit.sh" || true
 echo "total: $(( $(date +%s) - t0 )) s"

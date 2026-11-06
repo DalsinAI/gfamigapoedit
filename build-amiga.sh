@@ -84,12 +84,21 @@ ls -l "$WORK/sysroot/lib" > "$OUT/libraries.txt"
 # Poedit
 [ "$(left)" -gt 120 ] || { echo "Poedit next run ($(left) s left)"; exit 0; }
 rc=0
-TOOLCHAIN="$TC" WORK="$WORK" WX="$WXB/out/sdk" OUT="$OUT" JOBS=$JOBS CC_DEADLINE=$(( t0 + ${BUDGET_TOTAL:-840} - 90 )) \
-    sh "$HERE/scripts/build-poedit.sh" > "$WORK.poedit.log" 2>&1 || rc=$?
+# stopped before the job's cap (a compiler started just before the
+# deadline can run for minutes) so the log comes back; the objects stay
+TOOLCHAIN="$TC" WORK="$WORK" WX="$WXB/out/sdk" OUT="$OUT" JOBS=${POEDIT_JOBS:-12} CC_DEADLINE=$(( t0 + ${BUDGET_TOTAL:-840} - 240 )) \
+    timeout $(( $(left) - 25 )) sh "$HERE/scripts/build-poedit.sh" > "$WORK.poedit.log" 2>&1 || rc=$?
 grep '^stage ' "$WORK.poedit.log" || true
+poedit_progress() {
+    echo "Poedit: $(ls "$WORK/obj/poedit"/*.o 2>/dev/null | wc -l) objects so far, goes on next run"
+    # the first errors from files that failed this run
+    for e in $(ls -t "$WORK/obj/poedit"/*.err 2>/dev/null); do
+        [ -s "$e" ] && [ ! -f "${e%.err}" ] && grep -q 'error' "$e" && { echo "FAIL $(basename "${e%.o.err}")"; grep -m 12 'error' "$e" | cut -c1-300 | sed 's/^/ERR /'; }
+    done | head -60
+}
 case $rc in
     0) ls -l "$OUT/Poedit" ;;
-    3) echo "Poedit: $(ls "$WORK/obj/poedit"/*.o 2>/dev/null | wc -l) objects so far, goes on next run" ;;
+    3|124) poedit_progress ;;
     *) grep '^ERR \|^FAIL \|undefined' "$WORK.poedit.log" | cut -c1-400 | head -60; tail -5 "$WORK.poedit.log" | cut -c1-300; exit 1 ;;
 esac
 echo "total: $(( $(date +%s) - t0 )) s"

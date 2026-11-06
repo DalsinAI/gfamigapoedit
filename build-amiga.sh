@@ -47,7 +47,14 @@ if [ ! -x "$WXB/out/sdk/bin/wx-config" ] || [ "$(cat "$WXB/out/.rev" 2>/dev/null
     STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=$JOBS timeout $(( $(left) - 20 )) sh "$WORK/deps/gfopenwxtoolkit/build-amiga.sh" > "$WORK.wx.log" 2>&1 || rc=$?
     if [ "$rc" = 124 ]; then
         echo "toolkit: stopped at the time cap, $(ls "$WXB/gui/obj"/*.o 2>/dev/null | wc -l) GUI objects so far; goes on next run"
-        grep -v '^m68k-amigaos-g\|warning\|^ \|^In file' "$WORK.wx.log" | tail -12 | cut -c1-300
+        grep -v '^m68k-amigaos-g\|warning\|^ \|^In file\|duplicate section' "$WORK.wx.log" | tail -12 | cut -c1-300
+        # where the time went
+        for f in "$WXB"/wxWidgets-*/.patched "$WXB/base/.configured" "$WXB/wxgui/.toolkit" "$WXB/gui/wx/setup.h"; do
+            echo "toolkit file: $(ls -l --time-style=+%d-%T "$f" 2>/dev/null | awk '{print $6, $7}')"
+        done
+        echo "toolkit gui objects: oldest $(ls -tr --time-style=+%T -l "$WXB/gui/obj"/*.o 2>/dev/null | head -1 | awk '{print $6}'), newest $(ls -t --time-style=+%T -l "$WXB/gui/obj"/*.o 2>/dev/null | head -1 | awk '{print $6}')"
+        echo "toolkit base objects: $(find "$WXB/base" -name '*.o' -newer "$WORK.deps.log" | wc -l) made this run of $(find "$WXB/base" -name '*.o' | wc -l)"
+        echo "toolkit log: $(grep -c 'm68k-amigaos-g' "$WORK.wx.log") compiler lines, $(wc -l < "$WORK.wx.log") lines"
         exit 0
     fi
     [ "$rc" = 0 ] || { tail -30 "$WORK.wx.log" | cut -c1-400; exit 1; }

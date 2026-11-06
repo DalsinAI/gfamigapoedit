@@ -37,9 +37,25 @@ TOOLCHAIN="$TC" WORK="$WORK" JOBS=$JOBS sh "$HERE/scripts/build-deps.sh" > "$WOR
 grep "^stage " "$WORK.deps.log" || true
 echo "libraries: $(( $(date +%s) - t0 )) s"
 
-# the toolkit SDK, again only when its pinned commit changes
-fetch gfopenwxtoolkit "$WXT_REPO" "$WXT_COMMIT"
+# the toolkit SDK: a lab SDK another job already built (WXT_SDK_JOB, its
+# gfopenwx-sdk.tar.gz checked by WXT_SDK_SHA256), or built here, again only
+# when its pinned commit changes
 WXB="$WORK/gfopenwx"
+if [ -n "${WXT_SDK_JOB:-}" ]; then
+    T="${CRADLE_JOBS:-$HOME/AmiCradle-dev/cradle-builds/jobs}/$WXT_SDK_JOB/out/gfopenwx-sdk.tar.gz"
+    if [ "$(cat "$WXB/out/.rev" 2>/dev/null)" != "$WXT_SDK_SHA256" ]; then
+        echo "$WXT_SDK_SHA256  $T" | sha256sum -c - >/dev/null || { echo "toolkit SDK: $T missing or not $WXT_SDK_SHA256"; exit 1; }
+        rm -rf "$WXB/out" "$WXB/sdk-unpack"; mkdir -p "$WXB/out" "$WXB/sdk-unpack"
+        tar -C "$WXB/sdk-unpack" -xzf "$T"
+        c=$(find "$WXB/sdk-unpack" -path '*/bin/wx-config' | head -1)
+        [ -n "$c" ] || { echo "toolkit SDK: no bin/wx-config in $T"; exit 1; }
+        mv "$(dirname "$(dirname "$c")")" "$WXB/out/sdk"; rm -rf "$WXB/sdk-unpack"
+        echo "$WXT_SDK_SHA256" > "$WXB/out/.rev"
+    fi
+    WXT_COMMIT=$WXT_SDK_SHA256
+else
+    fetch gfopenwxtoolkit "$WXT_REPO" "$WXT_COMMIT"
+fi
 if [ ! -x "$WXB/out/sdk/bin/wx-config" ] || [ "$(cat "$WXB/out/.rev" 2>/dev/null)" != "$WXT_COMMIT" ]; then
     [ "$(left)" -gt 300 ] || { echo "toolkit next run ($(left) s left)"; exit 0; }
     # stopped before the job's cap so the log comes back; make goes on

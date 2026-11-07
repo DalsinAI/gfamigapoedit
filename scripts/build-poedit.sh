@@ -69,4 +69,6 @@ m68k-amigaos-g++ -noixemul -m68040 -specs="$SPECS" -o "$OUT/Poedit.debug" "$O"/*
          grep -v 'duplicate section' "$WORK/poedit.link.log" | grep -E "undefined reference|error|cannot find|No such" | sed 's/.*undefined reference to/undefined:/' | sort | uniq -c | sort -rn | head -60 | sed 's/^/ERR /'
          grep -v 'duplicate section\|: in function\|undefined reference' "$WORK/poedit.link.log" | tail -15 | cut -c1-300 | sed 's/^/ERR /'; exit 1; }
 cp "$OUT/Poedit.debug" "$OUT/Poedit"; m68k-amigaos-strip "$OUT/Poedit"
+# the ARexx example (README: ARexx)
+mkdir -p "$OUT/Rexx"; cp "$HERE"/Rexx/*.rexx "$OUT/Rexx/"
 echo "stage poedit: $(ls -l "$OUT/Poedit" | awk '{print $5}') bytes"

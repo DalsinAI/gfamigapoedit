@@ -29,3 +29,5 @@ ADDRESS 'POEDIT.1'
 PARSE VAR result all done fuzzy todo bad
 SAY done 'of' all 'finished,' fuzzy 'fuzzy,' todo 'to do'
 ```
+
+`Rexx/Stats.rexx` (in the Rexx drawer beside the program) is an example.

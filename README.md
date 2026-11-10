@@ -30,4 +30,6 @@ PARSE VAR result all done fuzzy todo bad
 SAY done 'of' all 'finished,' fuzzy 'fuzzy,' todo 'to do'
 ```
 
-`Rexx/Stats.rexx` (in the Rexx drawer beside the program) is an example.
+`Rexx/Stats.rexx` (in the Rexx drawer beside the program) is an example. `tests/arexx.rexx` (in the tests drawer beside it) checks the whole port: `rx tests/arexx.rexx` with the program running; it QUITs the program at the end.
+
+Return codes, as OS 3.2's arexx.class: 0 OK, 5 warning, 10 error, 20 unknown command or failure.

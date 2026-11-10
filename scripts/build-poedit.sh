@@ -71,4 +71,5 @@ m68k-amigaos-g++ -noixemul -m68040 -specs="$SPECS" -o "$OUT/Poedit.debug" "$O"/*
 cp "$OUT/Poedit.debug" "$OUT/Poedit"; m68k-amigaos-strip "$OUT/Poedit"
 # the ARexx example (README: ARexx)
 mkdir -p "$OUT/Rexx"; cp "$HERE"/Rexx/*.rexx "$OUT/Rexx/"
+mkdir -p "$OUT/tests"; cp "$HERE/tests/arexx.rexx" "$OUT/tests/"   # the ARexx port test
 echo "stage poedit: $(ls -l "$OUT/Poedit" | awk '{print $5}') bytes"

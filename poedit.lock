@@ -26,7 +26,7 @@ ICU_URL=https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-
 ICU_SHA256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
 UL_REPO=https://github.com/DalsinAI/gfopenbrowser
 # gfopenbrowser PR #187's branch (the 16 calls Poedit adds) until it merges
-UL_COMMIT=67b6e5dcdf9f1874c6715b638d78b1c68a0e14a6
+UL_COMMIT=d4077550ff3b3c34d95d6e8e3e67fa5d06ee22f9
 # GFOpenSDK's NDK headers that unicode.library builds with (as its CI pins them)
 UL_SDK_REPO=https://github.com/DalsinAI/gfopensdk
 UL_SDK_COMMIT=5bfeaea0d004e86afb990fddb591bf0039f09233

@@ -34,7 +34,7 @@ if [ "$(cat "$S/.rev" 2>/dev/null)" != "$REV" ]; then
     # a patched file is newer than its object, so cc_many builds it again
     echo "$REV" > "$S/.rev"
 fi
-for f in tm/transmem.cpp pugi/pugixml.hpp pugi/pugixml.cpp; do
+for f in tm/transmem.cpp pugi/pugixml.hpp pugi/pugixml.cpp amiga/rexx.cpp; do
     mkdir -p "$S/$(dirname "$f")"
     cmp -s "$HERE/src/$f" "$S/$f" || cp "$HERE/src/$f" "$S/$f"
 done
@@ -44,7 +44,7 @@ cmp -s "$S/compiled_xrc.cpp.new" "$S/compiled_xrc.cpp" && rm "$S/compiled_xrc.cp
 # poedit_SOURCES from Poedit's src/Makefile.am, without the cloud accounts
 SRCS=$(sed -n '/^poedit_SOURCES = /,/^[^ ]/p' "$S/Makefile.am" | tr ' \t\\' '\n\n\n' | grep '\.cpp$')
 [ -n "$SRCS" ] || { echo "no sources in $S/Makefile.am"; exit 1; }
-SRCS="$SRCS compiled_xrc.cpp pugi/pugixml.cpp"
+SRCS="$SRCS compiled_xrc.cpp pugi/pugixml.cpp amiga/rexx.cpp"
 echo "stage poedit sources: $(echo $SRCS | wc -w)"
 
 # shellcheck disable=SC2046
@@ -69,4 +69,7 @@ m68k-amigaos-g++ -noixemul -m68040 -specs="$SPECS" -o "$OUT/Poedit.debug" "$O"/*
          grep -v 'duplicate section' "$WORK/poedit.link.log" | grep -E "undefined reference|error|cannot find|No such" | sed 's/.*undefined reference to/undefined:/' | sort | uniq -c | sort -rn | head -60 | sed 's/^/ERR /'
          grep -v 'duplicate section\|: in function\|undefined reference' "$WORK/poedit.link.log" | tail -15 | cut -c1-300 | sed 's/^/ERR /'; exit 1; }
 cp "$OUT/Poedit.debug" "$OUT/Poedit"; m68k-amigaos-strip "$OUT/Poedit"
+# the ARexx example (README: ARexx)
+mkdir -p "$OUT/Rexx"; cp "$HERE"/Rexx/*.rexx "$OUT/Rexx/"
+mkdir -p "$OUT/tests"; cp "$HERE/tests/arexx.rexx" "$OUT/tests/"   # the ARexx port test
 echo "stage poedit: $(ls -l "$OUT/Poedit" | awk '{print $5}') bytes"

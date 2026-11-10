@@ -7,8 +7,8 @@ JSON_GIT=https://github.com/nlohmann/json.git
 JSON_COMMIT=55f93686c01528224f448c19128836e7df245f72
 # Our own pieces, fetched at these commits
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
-# (team3/poedit-toolkit-20261106: main with the font picker and activity indicator)
-WXT_COMMIT=3ba79b2b208a1baec1c19ae08072e837456e292b
+# (main 1c4e5dd, v0.1.0-rc4: the font picker, activity indicator and wxARexxPort)
+WXT_COMMIT=1c4e5dd981a8d3fb7ccb417bd91dd201bd18307d
 OXP_REPO=https://github.com/DalsinAI/gfopenxml
 OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
 # transmem.library (GFOpenTransMem), the translation memory on SQLite: the
@@ -32,5 +32,5 @@ UL_SDK_REPO=https://github.com/DalsinAI/gfopensdk
 UL_SDK_COMMIT=5bfeaea0d004e86afb990fddb591bf0039f09233
 # A lab SDK already built at the toolkit's commit (a job's
 # gfopenwx-sdk.tar.gz) in place of building the toolkit here; empty: build it
-WXT_SDK_JOB=j20261106T184431-30f18d
-WXT_SDK_SHA256=fa2d7e63d06f8bba0f5e28ac820e0594bea2f64358a76f025824733478e65e3d
+WXT_SDK_JOB=
+WXT_SDK_SHA256=

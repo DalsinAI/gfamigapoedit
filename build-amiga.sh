@@ -86,6 +86,13 @@ ls -l "$WORK/sysroot/lib" > "$OUT/libraries.txt"
 rc=0
 # stopped before the job's cap (a compiler started just before the
 # deadline can run for minutes) so the log comes back; the objects stay
+# objects made against another toolkit commit go (ARexx rule 7): its
+# headers are not in the make rules, and stale objects crash at start
+# (gfamigagolly #3)
+if [ "$(cat "$WORK/.toolkit-objs" 2>/dev/null)" != "$WXT_COMMIT" ]; then
+    rm -rf "$WORK/obj/poedit"
+    echo "$WXT_COMMIT" > "$WORK/.toolkit-objs"
+fi
 TOOLCHAIN="$TC" WORK="$WORK" WX="$WXB/out/sdk" OUT="$OUT" JOBS=${POEDIT_JOBS:-12} CC_DEADLINE=$(( t0 + ${BUDGET_TOTAL:-840} - 240 )) \
     timeout $(( $(left) - 25 )) sh "$HERE/scripts/build-poedit.sh" > "$WORK.poedit.log" 2>&1 || rc=$?
 grep '^stage ' "$WORK.poedit.log" || true

@@ -1,0 +1,42 @@
+AmigaOS: the ARexx port POEDIT.1 opens in OnInit and closes in OnExit (src/amiga/rexx.cpp).
+
+--- a/src/edapp.cpp	2026-11-07 13:49:23.123126774 +0000
++++ b/src/edapp.cpp	2026-11-07 13:49:23.150490110 +0000
+@@ -369,6 +369,12 @@
+ #if !defined(__WXOSX__) && wxUSE_IPC
+     m_remoteServer.reset(new RemoteServer(this));
+ #endif
++#ifdef __AMIGA__
++    {
++        extern void AmigaRexxStart();
++        AmigaRexxStart();
++    }
++#endif
+ 
+     InitHiDPIHandling();
+ 
+@@ -504,6 +510,12 @@
+ 
+ int PoeditApp::OnExit()
+ {
++#ifdef __AMIGA__
++    {
++        extern void AmigaRexxStop();
++        AmigaRexxStop();
++    }
++#endif
+ #if !defined(__WXOSX__) && wxUSE_IPC
+     m_instanceChecker.reset();
+     m_remoteServer.reset();
+--- a/src/edframe.h	2026-10-13 14:21:18.000000000 +0000
++++ b/src/edframe.h	2026-11-07 13:49:23.150051936 +0000
+@@ -64,6 +64,9 @@
+  */
+ class PoeditFrame : public PoeditFrameBase
+ {
++#ifdef __AMIGA__
++    friend class AmigaRexx; // amiga/rexx.cpp: the ARexx port
++#endif
+     public:
+         /** Public constructor functions. Creates and shows frame
+             and opens \a catalog. If \a catalog is already opened

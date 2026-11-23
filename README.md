@@ -7,6 +7,10 @@ Poedit and the libraries it uses are fetched at build time at the versions `poed
 Designed, tested and delivered by The AmiCradle Team.
 Copyright (c) 2026 AmiCradle Team
 
+## Needs
+
+`gfopenlayout.library` 12 or later in `LIBS:`. Poedit's windows are drawn by GFOpenLayout through that library, not a copy built into the program (GFOffice Libs ships version 25). Without it Poedit says "This needs gfopenlayout.library 12 or later in LIBS:" and stops.
+
 ## ARexx
 
 Poedit has an ARexx port, `POEDIT.1` (`POEDIT.2` for a second copy), from the GFOpenWX Toolkit's `wxARexxPort` on arexx.class (`src/amiga/rexx.cpp`, patch 0007).

@@ -8,7 +8,7 @@ JSON_COMMIT=55f93686c01528224f448c19128836e7df245f72
 # Our own pieces, fetched at these commits
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
 # (main 1c4e5dd, v0.1.0-rc4: the font picker, activity indicator and wxARexxPort)
-WXT_COMMIT=1c4e5dd981a8d3fb7ccb417bd91dd201bd18307d
+WXT_COMMIT=2b2db788892b0379438ae7201821b93789610861   # toolkit main: GFOpenLayout UI through gfopenlayout.library 12+ (gfopenwxtoolkit PR 1)
 OXP_REPO=https://github.com/DalsinAI/gfopenxml
 OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
 # transmem.library (GFOpenTransMem), the translation memory on SQLite: the

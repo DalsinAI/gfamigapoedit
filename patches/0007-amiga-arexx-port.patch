@@ -3,7 +3,7 @@ AmigaOS: the ARexx port POEDIT.1 opens in OnInit and closes in OnExit (src/amiga
 --- a/src/edapp.cpp	2026-11-07 13:49:23.123126774 +0000
 +++ b/src/edapp.cpp	2026-11-07 13:49:23.150490110 +0000
 @@ -369,6 +369,12 @@
- #if !defined(__WXOSX__) && wxUSE_IPC
+ #if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
      m_remoteServer.reset(new RemoteServer(this));
  #endif
 +#ifdef __AMIGA__
@@ -25,7 +25,7 @@ AmigaOS: the ARexx port POEDIT.1 opens in OnInit and closes in OnExit (src/amiga
 +        AmigaRexxStop();
 +    }
 +#endif
- #if !defined(__WXOSX__) && wxUSE_IPC
+ #if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
      m_instanceChecker.reset();
      m_remoteServer.reset();
 --- a/src/edframe.h	2026-10-13 14:21:18.000000000 +0000

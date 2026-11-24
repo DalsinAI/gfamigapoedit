@@ -1,4 +1,4 @@
-AmigaOS: no single-instance IPC (the toolkit's base has no wxIPC) and no file system watcher yet.
+AmigaOS: no single-instance IPC (the toolkit has IPC but no wxSingleInstanceChecker, so both are tested) and no file system watcher yet.
 
 diff -ru a/src/edapp.cpp b/src/edapp.cpp
 --- a/src/edapp.cpp	2026-11-06 15:23:47.644445215 +0000
@@ -8,7 +8,7 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
  
  
 -#ifndef __WXOSX__
-+#if !defined(__WXOSX__) && wxUSE_IPC
++#if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
  
  // IPC for ensuring that only one instance of Poedit runs at a time. This is
  // handled native on macOS and GtkApplication could do it under GTK+3, but wx
@@ -17,7 +17,7 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
      SetAppName("Poedit");
  
 -#ifndef __WXOSX__
-+#if !defined(__WXOSX__) && wxUSE_IPC
++#if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
      // create early for use in cmd line parsing
      m_instanceChecker.reset(new wxSingleInstanceChecker);
    #ifdef __UNIX__
@@ -26,7 +26,7 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
  #endif
  
 -#ifndef __WXOSX__
-+#if !defined(__WXOSX__) && wxUSE_IPC
++#if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
      m_remoteServer.reset(new RemoteServer(this));
  #endif
  
@@ -35,7 +35,7 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
  int PoeditApp::OnExit()
  {
 -#ifndef __WXOSX__
-+#if !defined(__WXOSX__) && wxUSE_IPC
++#if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
      m_instanceChecker.reset();
      m_remoteServer.reset();
  #endif
@@ -44,7 +44,7 @@ diff -ru a/src/edapp.cpp b/src/edapp.cpp
          TempDirectory::KeepFiles();
  
 -#ifndef __WXOSX__
-+#if !defined(__WXOSX__) && wxUSE_IPC
++#if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
      RemoteClient client(m_instanceChecker.get());
      switch (client.ConnectIfNeeded())
      {
@@ -56,7 +56,7 @@ diff -ru a/src/edapp.h b/src/edapp.h
          std::unique_ptr<wxLocale> m_locale;
  
 -#ifndef __WXOSX__
-+#if !defined(__WXOSX__) && wxUSE_IPC
++#if !defined(__WXOSX__) && wxUSE_IPC && wxUSE_SNGLINST_CHECKER
          class RemoteServer;
          class RemoteClient;
          std::unique_ptr<RemoteServer> m_remoteServer;
